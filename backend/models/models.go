@@ -162,15 +162,25 @@ type PaymentOrder struct {
 }
 
 // PointsHistory 积分记录
+// PointsType 积分变动类型
+type PointsType string
+
+const (
+	PointsTypeRecharge PointsType = "recharge" // 充值
+	PointsTypeWithdraw PointsType = "withdraw" // 提现
+	PointsTypeConsume  PointsType = "consume"  // 消费
+	PointsTypeReward   PointsType = "reward"   // 奖励
+)
+
+// PointsHistory 积分流水记录
 type PointsHistory struct {
-	ID        uint      `gorm:"primarykey" json:"id"`
-	UserID    uint      `gorm:"index" json:"user_id"`
-	Change    int64     `json:"change"`
-	Balance   int64     `json:"balance"`
-	Type      int       `json:"type"`
-	Remark    string    `gorm:"size:200" json:"remark"`
-	RelatedID uint      `json:"related_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          uint       `gorm:"primarykey" json:"id"`
+	UserID      uint       `gorm:"index" json:"user_id"`
+	Amount      int64      `json:"amount"` // 变动数量，正数增加，负数减少
+	Type        PointsType `gorm:"size:20" json:"type"`
+	Description string     `gorm:"size:500" json:"description"`
+	RelatedID   uint       `json:"related_id"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 // SystemConfig 系统配置
@@ -272,5 +282,7 @@ func AutoMigrate(db *gorm.DB) {
 		&AdminLog{},
 		&RedPacket{},
 		&RedPacketDetail{},
+		&RechargeRequest{},
+		&WithdrawRequest{},
 	)
 }

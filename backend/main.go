@@ -107,6 +107,16 @@ func main() {
 		authed.POST("/payment/orders/:order_id/pay", handlers.ProcessPayment)
 		authed.GET("/payment/orders", handlers.GetOrders)
 		authed.GET("/payment/points/history", handlers.GetPointsHistory)
+
+		// 充值申请
+		authed.POST("/recharge", handlers.CreateRechargeRequest)
+		authed.GET("/recharge", handlers.GetMyRechargeRequests)
+		authed.GET("/recharge/:id", handlers.GetRechargeRequestDetail)
+
+		// 提现申请
+		authed.POST("/withdraw", handlers.CreateWithdrawRequest)
+		authed.GET("/withdraw", handlers.GetMyWithdrawRequests)
+		authed.GET("/withdraw/:id", handlers.GetWithdrawRequestDetail)
 	}
 
 	// 系统配置接口（公开接口）
@@ -135,6 +145,16 @@ func main() {
 		admin.POST("/system/logo", handlers.UploadLogo)
 		admin.POST("/system/favicon", handlers.UploadFavicon)
 		admin.POST("/system/maintenance", handlers.SetMaintenanceMode)
+
+		// 充值审核
+		admin.GET("/admin/recharge", handlers.GetAllRechargeRequests)
+		admin.PUT("/admin/recharge/:id/approve", handlers.ApproveRecharge)
+		admin.PUT("/admin/recharge/:id/reject", handlers.RejectRecharge)
+
+		// 提现审核
+		admin.GET("/admin/withdraw", handlers.GetAllWithdrawRequests)
+		admin.PUT("/admin/withdraw/:id/approve", handlers.ApproveWithdraw)
+		admin.PUT("/admin/withdraw/:id/reject", handlers.RejectWithdraw)
 	}
 
 	log.Printf("Server starting on port %d", config.Cfg.Server.Port)

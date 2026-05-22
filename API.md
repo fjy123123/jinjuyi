@@ -1630,7 +1630,409 @@ GET /payment/points/history?page=1&page_size=20
 
 ---
 
-## 11. 管理员接口
+## 11. 充值提现审核接口
+
+### 11.1 创建充值申请
+
+**请求**
+```
+POST /api/v1/recharge
+Authorization: Bearer <token>
+```
+
+**请求体：**
+```json
+{
+  "amount": 100.00,
+  "points": 10000,
+  "recharge_type": "personal",
+  "payment_image": "https://example.com/payment.jpg",
+  "remark": "微信支付充值"
+}
+```
+
+**参数说明：**
+- `amount`: 充值金额（元）
+- `points`: 兑换的积分数量
+- `recharge_type`: 充值方式，`personal`（个人收款码）或 `company`（公司收款码）
+- `payment_image`: 付款截图URL
+- `remark`: 备注（可选）
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "amount": 100.00,
+    "points": 10000,
+    "recharge_type": "personal",
+    "payment_image": "https://example.com/payment.jpg",
+    "remark": "微信支付充值",
+    "status": "pending",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+---
+
+### 11.2 获取我的充值申请
+
+**请求**
+```
+GET /api/v1/recharge?page=1&page_size=20
+Authorization: Bearer <token>
+```
+
+**参数说明：**
+- `page`: 页码，默认1
+- `page_size`: 每页数量，默认20
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "amount": 100.00,
+        "points": 10000,
+        "status": "approved",
+        "created_at": "2024-01-15T10:30:00Z",
+        "reviewer": {
+          "id": 2,
+          "username": "admin"
+        }
+      }
+    ],
+    "total": 10,
+    "page": 1,
+    "page_size": 20
+  }
+}
+```
+
+---
+
+### 11.3 获取充值申请详情
+
+**请求**
+```
+GET /api/v1/recharge/:id
+Authorization: Bearer <token>
+```
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "id": 1,
+    "amount": 100.00,
+    "points": 10000,
+    "recharge_type": "personal",
+    "payment_image": "https://example.com/payment.jpg",
+    "status": "approved",
+    "review_remark": "审核通过",
+    "reviewed_at": "2024-01-15T11:00:00Z",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+---
+
+### 11.4 创建提现申请
+
+**请求**
+```
+POST /api/v1/withdraw
+Authorization: Bearer <token>
+```
+
+**请求体：**
+```json
+{
+  "points": 10000,
+  "amount": 100.00,
+  "withdraw_type": "personal",
+  "payment_code": "https://example.com/qrcode.jpg",
+  "real_name": "张三",
+  "phone": "13800138000",
+  "remark": "提现到微信"
+}
+```
+
+**参数说明：**
+- `points`: 提现积分数量
+- `amount`: 提现金额（元）
+- `withdraw_type`: 提现方式，`personal`（个人收款码）或 `company`（公司收款码）
+- `payment_code`: 收款码URL
+- `real_name`: 真实姓名
+- `phone`: 手机号
+- `remark`: 备注（可选）
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "id": 1,
+    "user_id": 1,
+    "points": 10000,
+    "amount": 100.00,
+    "withdraw_type": "personal",
+    "status": "pending",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+---
+
+### 11.5 获取我的提现申请
+
+**请求**
+```
+GET /api/v1/withdraw?page=1&page_size=20
+Authorization: Bearer <token>
+```
+
+**参数说明：**
+- `page`: 页码，默认1
+- `page_size`: 每页数量，默认20
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "points": 10000,
+        "amount": 100.00,
+        "status": "pending",
+        "created_at": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "page_size": 20
+  }
+}
+```
+
+---
+
+### 11.6 获取提现申请详情
+
+**请求**
+```
+GET /api/v1/withdraw/:id
+Authorization: Bearer <token>
+```
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "id": 1,
+    "points": 10000,
+    "amount": 100.00,
+    "withdraw_type": "personal",
+    "payment_code": "https://example.com/qrcode.jpg",
+    "real_name": "张三",
+    "phone": "13800138000",
+    "status": "pending",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+---
+
+## 12. 管理员接口
+
+### 12.1 获取所有充值申请
+
+**请求**
+```
+GET /api/v1/admin/recharge?status=pending&page=1&page_size=20
+Authorization: Bearer <admin_token>
+```
+
+**参数说明：**
+- `status`: 筛选状态，`pending`（待审核）、`approved`（已通过）、`rejected`（已拒绝）
+- `page`: 页码，默认1
+- `page_size`: 每页数量，默认20
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "user_id": 1,
+        "amount": 100.00,
+        "points": 10000,
+        "status": "pending",
+        "created_at": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "total": 10,
+    "page": 1,
+    "page_size": 20
+  }
+}
+```
+
+---
+
+### 12.2 审核通过充值申请
+
+**请求**
+```
+PUT /api/v1/admin/recharge/:id/approve
+Authorization: Bearer <admin_token>
+```
+
+**请求体：**
+```json
+{
+  "remark": "充值金额正确，已到账"
+}
+```
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "msg": "审核成功，积分已到账"
+}
+```
+
+---
+
+### 12.3 拒绝充值申请
+
+**请求**
+```
+PUT /api/v1/admin/recharge/:id/reject
+Authorization: Bearer <admin_token>
+```
+
+**请求体：**
+```json
+{
+  "remark": "付款截图不清晰，请重新上传"
+}
+```
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "msg": "已拒绝"
+}
+```
+
+---
+
+### 12.4 获取所有提现申请
+
+**请求**
+```
+GET /api/v1/admin/withdraw?status=pending&page=1&page_size=20
+Authorization: Bearer <admin_token>
+```
+
+**参数说明：**
+- `status`: 筛选状态，`pending`（待审核）、`approved`（已通过）、`rejected`（已拒绝）
+- `page`: 页码，默认1
+- `page_size`: 每页数量，默认20
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "user_id": 1,
+        "points": 10000,
+        "amount": 100.00,
+        "status": "pending",
+        "created_at": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "total": 5,
+    "page": 1,
+    "page_size": 20
+  }
+}
+```
+
+---
+
+### 12.5 审核通过提现申请
+
+**请求**
+```
+PUT /api/v1/admin/withdraw/:id/approve
+Authorization: Bearer <admin_token>
+```
+
+**请求体：**
+```json
+{
+  "remark": "已处理，请查收"
+}
+```
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "msg": "审核成功，积分已扣除"
+}
+```
+
+---
+
+### 12.6 拒绝提现申请
+
+**请求**
+```
+PUT /api/v1/admin/withdraw/:id/reject
+Authorization: Bearer <admin_token>
+```
+
+**请求体：**
+```json
+{
+  "remark": "收款码不清晰，请重新上传"
+}
+```
+
+**响应示例：**
+```json
+{
+  "code": 0,
+  "msg": "已拒绝"
+}
+```
+
+---
+
+## 13. 管理员接口
 
 ### 11.1 获取数据库统计
 
