@@ -1,0 +1,63 @@
+# =============================================
+# Chat System Pro - 国产芯片后端构建文件
+# 支持: ARM64 (鲲鹏/飞腾), MIPS64 (龙芯), x86_64 (海光)
+# =============================================
+
+# 构建阶段
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21-alpine AS builder
+
+ARG TARGETOS=linux
+ARG TARGETARCH=arm64
+ARG TARGETVARIANT
+
+WORKDIR /app
+
+# 安装必要的工具
+RUN apk add --no-cache --update git ca-certificates tzdata
+
+# 设置 Go 模块代理（使用国内代理加速）
+ENV GOPROXY=https://goproxy.cn,direct
+
+# 复制依赖文件
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 复制源码
+COPY . .
+
+# 构建应用
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -installsuffix cgo -o chat-system-pro main.go
+
+# 运行阶段
+FROM --platform=${TARGETPLATFORM:-linux/arm64} alpine:latest
+
+WORKDIR /app
+
+# 设置时区
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Shanghai
+
+# 安装必要的工具
+RUN apk add --no-cache ca-certificates
+
+# 复制二进制文件
+COPY --from=builder /app/chat-system-pro /app/
+COPY --from=builder /app/config.yaml /app/config.yaml
+COPY --from=builder /app/docker/entrypoint.sh /app/entrypoint.sh
+
+# 创建必要的目录
+RUN mkdir -p /app/uploads /app/logs /app/data
+
+# 设置权限
+RUN chmod +x /app/chat-system-pro /app/entrypoint.sh
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -q --spider http://localhost:8080/health || exit 1
+
+# 暴露端口
+EXPOSE 8080
+
+# 运行
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["/app/chat-system-pro"]
