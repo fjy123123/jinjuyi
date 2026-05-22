@@ -139,12 +139,28 @@ check_docker_compose() {
     log_info "检查 Docker Compose..."
     
     if docker compose version &> /dev/null; then
-        log_success "Docker Compose 已安装，版本: $(docker compose version)"
+        log_success "Docker Compose 已安装（新语法 docker compose）"
+        COMPOSE_CMD="docker compose"
     elif docker-compose version &> /dev/null; then
-        log_success "Docker Compose 已安装，版本: $(docker-compose version)"
+        log_success "Docker Compose 已安装（旧语法 docker-compose）"
+        COMPOSE_CMD="docker-compose"
     else
-        log_error "Docker Compose 未找到"
-        exit 1
+        log_warning "Docker Compose 未找到，正在安装..."
+        
+        # 尝试安装 docker-compose-plugin
+        sudo apt-get install -y docker-compose-plugin
+        
+        if [ $? -eq 0 ]; then
+            log_success "Docker Compose 安装完成"
+            COMPOSE_CMD="docker compose"
+        else
+            # 如果 apt 安装失败，尝试直接下载
+            log_warning "apt 安装失败，尝试直接下载..."
+            sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+            COMPOSE_CMD="docker-compose"
+            log_success "Docker Compose 下载安装完成"
+        fi
     fi
 }
 
@@ -193,12 +209,8 @@ setup_env() {
 start_services() {
     log_info "启动服务..."
     
-    # 使用新版本的 docker compose 命令
-    if docker compose version &> /dev/null; then
-        docker compose up -d
-    else
-        docker-compose up -d
-    fi
+    # 使用检测到的 compose 命令
+    $COMPOSE_CMD up -d
     
     log_success "服务启动中..."
     
@@ -208,11 +220,7 @@ start_services() {
     
     # 检查服务状态
     log_info "检查服务状态..."
-    if docker compose version &> /dev/null; then
-        docker compose ps
-    else
-        docker-compose ps
-    fi
+    $COMPOSE_CMD ps
 }
 
 # 打印部署完成信息
@@ -229,10 +237,10 @@ print_complete() {
     echo "    API:  http://$LOCAL_IP:8080"
     echo ""
     echo "  常用命令 (在 jinjuyi 目录下执行):"
-    echo "    查看日志: docker compose logs -f"
-    echo "    停止服务: docker compose down"
-    echo "    重启服务: docker compose restart"
-    echo "    更新代码: git pull && docker compose pull && docker compose up -d"
+    echo "    查看日志: $COMPOSE_CMD logs -f"
+    echo "    停止服务: $COMPOSE_CMD down"
+    echo "    重启服务: $COMPOSE_CMD restart"
+    echo "    更新代码: git pull && $COMPOSE_CMD pull && $COMPOSE_CMD up -d"
     echo ""
     echo "  项目目录: $PROJECT_DIR"
     echo "  配置文件: $PROJECT_DIR/.env"
