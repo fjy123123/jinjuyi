@@ -75,9 +75,10 @@ services:
     networks:
       - chat-pro-network
     restart: always
+    deploy:
       resources:
         limits:
-          cpus: '2
+          cpus: '2'
           memory: 4G
 
   frontend:
