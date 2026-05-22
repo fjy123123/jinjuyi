@@ -1,4 +1,4 @@
-# Chat System Pro - 完整商业化聊天系统
+# 知信 - 完整商业化聊天系统
 
 一个功能完整、可用于生产环境的即时聊天系统。支持前后端分离、多端（Web/Android/iOS/小程序）部署、混合数据库架构、支付系统、安全防护等功能。
 
@@ -48,395 +48,123 @@
 - ✅ 充值/消费记录
 - ✅ 订单管理
 
-### 📱 多端支持
-- ✅ **Web端**：React + Ant Design
-- ✅ **小程序**：微信小程序（UniApp）
-- ✅ **Android**：UniApp 打包
-- ✅ **iOS**：UniApp 打包
-- ✅ **多端消息同步**
-- ✅ 设备管理
+### 🎁 红包功能
+- ✅ 普通红包
+- ✅ 拼手气红包
+- ✅ 积分支付红包
+- ✅ 微信/支付宝支付红包
+- ✅ 红包记录管理
 
-### 🎪 朋友圈
-- ✅ 发布朋友圈（文字/图片/位置）
-- ✅ 点赞/取消点赞
-- ✅ 评论/回复
-- ✅ 可见范围设置（所有人/仅好友/指定可见/隐藏）
-- ✅ 时间线展示
+### 🎨 系统配置
+- ✅ 系统名称配置（后台可修改）
+- ✅ 系统图标配置（后台可修改）
+- ✅ Logo上传
+- ✅ 主题色配置
+- ✅ 多种UI模板支持
 
-### 数据库管理
-- ✅ 清除指定日期前的消息
-- ✅ 清空数据库（危险操作）
-- ✅ 初始化数据库（重置系统）
-- ✅ 删除指定用户及其所有数据
-- ✅ 删除指定群及其所有数据
-- ✅ 消息归档功能
-- ✅ 数据库统计查询
+## 🔧 技术栈
 
-### 支付系统
-- ✅ Stripe 支付集成
-- ✅ 微信支付（预留接口）
-- ✅ 支付宝（预留接口）
-- ✅ 积分系统
-- ✅ 订单管理
-- ✅ 积分历史记录
-- ✅ 手动增扣积分（管理员）
+### 后端
+- **语言**: Go 1.21+
+- **框架**: Gin
+- **数据库**: MySQL + MongoDB + Redis
+- **实时通信**: WebSocket
+- **加密**: AES-256 + RSA
+- **部署**: Docker + Docker Compose
 
-### 安全防护
-- ✅ 邀请码注册开关
-- ✅ 验证码验证
-- ✅ 请求限流（防止暴力请求）
-- ✅ SQL 注入防护
-- ✅ XSS 防护
-- ✅ 安全头部设置
+### 前端
+- **框架**: React 18 + TypeScript
+- **样式**: TailwindCSS 3
+- **状态管理**: Redux
+- **构建工具**: Vite
 
-### 前端与UI
-- ✅ 现代化 Web 界面（React + Ant Design）
-- ✅ 多主题支持（Modern/Dark/Ocean/Purple）
-- ✅ 主题切换功能
-- ✅ 响应式设计
-- ✅ 移动端适配（UniApp）
-
-### 后台管理
-- ✅ 系统配置管理
-- ✅ 用户管理
-- ✅ 数据统计
-- ✅ 数据库操作
-
-### 性能优化
-- ✅ 消息异步处理
-- ✅ 分页加载历史消息
-- ✅ WebSocket 断线重连
-- ✅ 消息推送与本地存储
-- ✅ 支持水平扩展
-
-### 商业化功能
-- ✅ 支付系统
-- ✅ 积分消费体系
-- ✅ 会员系统（预留）
-- ✅ 广告位（预留）
-
-## 🏗️ 技术架构
-
-```
-┌───────────────────────────────────────────────────────────┐
-│                       Client Layer                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
-│  │   Web App    │  │  Mobile App  │  │  Mini Program │  │
-│  │  (React)     │  │  (UniApp)    │  │              │  │
-│  └──────────────┘  └──────────────┘  └───────────────┘  │
-└───────────────────────────────────────────────────────────┘
-                          ▼
-┌───────────────────────────────────────────────────────────┐
-│                    Nginx / CDN                             │
-│              (Static + Reverse Proxy)                     │
-└───────────────────────────────────────────────────────────┘
-                          ▼
-┌───────────────────────────────────────────────────────────┐
-│                    Backend (Go + Gin)                     │
-│  ┌───────────────────────────────────────────────────────┐│
-│  │  Auth  │  Message  │  Payment  │  System  │  Group ││
-│  │  Service  Service   Service    Service   Service  ││
-│  └───────────────────────────────────────────────────────┘│
-└───────────────────────────────────────────────────────────┘
-         ▼                  ▼                  ▼
-┌──────────────────┐┌─────────────────┐┌──────────────────┐
-│      MySQL       ││    MongoDB      ││     Redis        │
-│  (Relational Data)││ (Message Data) ││  (Cache/Limit)   │
-└──────────────────┘└─────────────────┘└──────────────────┘
-```
+### 移动端
+- **框架**: UniApp
+- **支持**: Android / iOS / 微信小程序
 
 ## 📦 快速开始
 
 ### 环境要求
-- Docker & Docker Compose
-- Node.js 18+ (前端开发)
-- Go 1.21+ (后端开发)
+- Docker 20+
+- Docker Compose 2+
 
-### 方式一：Docker 一键部署（推荐）
+### 一键部署
 
 ```bash
-# 1. 克隆项目
-cd chat-system-pro
+# 克隆项目
+git clone https://github.com/fjy123123/jinjuyi.git
+cd jinjuyi
 
-# 2. 配置环境变量
-cp .env.example .env
-# 编辑 .env，填入你的配置
-
-# 3. 启动所有服务
-docker-compose up -d
-
-# 4. 查看状态
-docker-compose ps
-
-# 5. 访问应用
-# 前端：http://your-domain
-# 后端API：http://your-domain:8080
+# 一键部署
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-### 方式二：本地开发
-
-#### 后端
-```bash
-cd backend
-
-# 1. 安装依赖
-go mod tidy
-
-# 2. 配置数据库
-# 编辑 config.yaml
-
-# 3. 运行
-go run main.go
+### 访问地址
+```
+前端: http://localhost
+API:  http://localhost:8080
 ```
 
-#### 前端
-```bash
-cd web
+## 📋 目录结构
 
-# 1. 安装依赖
-npm install
-
-# 2. 运行
-npm run dev
+```
+├── backend/              # Go后端源码
+│   ├── main.go          # 主程序入口
+│   ├── handlers/        # API处理器
+│   ├── services/        # 业务逻辑
+│   ├── models/          # 数据模型
+│   ├── middleware/      # 中间件
+│   ├── config/          # 配置管理
+│   └── utils/           # 工具函数
+├── web/                  # Web前端
+├── mobile/               # 移动端（UniApp）
+├── docker-compose.yml    # Docker配置
+├── deploy.sh            # 部署脚本
+└── README.md            # 项目说明
 ```
 
-#### 移动端
-```bash
-cd mobile
-
-# 1. 安装依赖
-npm install
-
-# 2. 运行（需要 HBuilderX）
-# 或通过命令行
-npm run dev:mp-weixin
-```
-
-## 🔧 配置说明
-
-### 环境变量配置 (.env)
-```env
-# 域名配置
-DOMAIN=your-domain.com
-API_BASE_URL=https://your-domain.com
-
-# 数据库配置
-MYSQL_ROOT_PASSWORD=your_password
-MYSQL_DATABASE=chat_system_pro
-MYSQL_USER=chat_user
-MYSQL_PASSWORD=chat_password
-
-# Redis配置
-REDIS_PASSWORD=your_redis_password
-
-# JWT配置
-JWT_SECRET=your_super_secret_key
-JWT_EXPIRE_HOURS=720
-
-# 服务模式
-GIN_MODE=release
-```
-
-### 系统配置（后台管理）
-
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| security.invite_code_enabled | 邀请码注册开关 | false |
-| security.captcha_enabled | 验证码开关 | false |
-| security.rate_limit_enabled | 限流开关 | true |
-| payment.wechat_pay_enabled | 微信支付 | false |
-| payment.alipay_enabled | 支付宝 | false |
-| system.ui_default | 默认主题 | modern |
-
-## 📡 API 接口文档
+## 🔌 API接口
 
 ### 认证接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/v1/auth/register | POST | 注册 |
-| /api/v1/auth/login | POST | 登录 |
-| /api/v1/auth/logout | POST | 登出 |
-
-### 用户接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/v1/users/me | GET | 获取当前用户信息 |
-| /api/v1/users/profile | PUT | 更新个人资料 |
-| /api/v1/users/search | GET | 搜索用户 |
-| /api/v1/users/friends | GET | 获取好友列表 |
-| /api/v1/users/friends | POST | 添加好友 |
+- `POST /api/v1/auth/register` - 用户注册
+- `POST /api/v1/auth/login` - 用户登录
+- `POST /api/v1/auth/logout` - 用户退出
 
 ### 消息接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/v1/messages | POST | 发送消息 |
-| /api/v1/messages/private/:id | GET | 获取私聊消息 |
-| /api/v1/messages/group/:id | GET | 获取群消息 |
-| /api/v1/messages/:id/recall | POST | 撤回消息 |
-| /api/v1/messages/unread | GET | 获取未读数 |
+- `POST /api/v1/messages` - 发送消息
+- `GET /api/v1/messages/private/:id` - 获取私聊消息
+- `GET /api/v1/messages/group/:id` - 获取群消息
+- `POST /api/v1/messages/:id/recall` - 撤回消息
 
-### 群聊接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/v1/groups | POST | 创建群聊 |
-| /api/v1/groups | GET | 获取我的群聊 |
-| /api/v1/groups/:id | GET | 获取群信息 |
-| /api/v1/groups/:id/members | GET | 获取群成员 |
+### 红包接口
+- `POST /api/v1/redpackets` - 发送红包
+- `POST /api/v1/redpackets/:id/grab` - 抢红包
+- `GET /api/v1/redpackets/:id` - 获取红包详情
 
-### 支付接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/v1/payment/orders | POST | 创建订单 |
-| /api/v1/payment/orders | GET | 获取订单列表 |
-| /api/v1/payment/points/history | GET | 积分历史 |
-| /api/v1/payment/orders/:id/pay | POST | 支付订单 |
+### 系统配置接口
+- `GET /api/v1/system/config` - 获取系统配置
+- `PUT /api/v1/system/config` - 更新系统配置
+- `POST /api/v1/system/logo` - 上传Logo
 
-### 数据库管理（管理员）
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/v1/admin/db/clear-old-messages | POST | 清除旧消息 |
-| /api/v1/admin/db/clear-all | POST | 清空所有数据 |
-| /api/v1/admin/db/init | POST | 初始化数据库 |
-| /api/v1/admin/db/users/:id/delete | POST | 删除用户数据 |
-| /api/v1/admin/db/groups/:id/delete | POST | 删除群数据 |
-| /api/v1/admin/db/archive-old | POST | 归档旧消息 |
-| /api/v1/admin/db/stats | GET | 数据库统计 |
+## 📚 文档
 
-## 📱 WebSocket 协议
+| 文档 | 说明 |
+|------|------|
+| [INSTALL.md](INSTALL.md) | 详细安装文档 |
+| [QUICKSTART.md](QUICKSTART.md) | 快速入门指南 |
+| [API.md](API.md) | 完整API文档 |
+| [DEPLOY.md](DEPLOY.md) | 部署指南 |
+| [mobile/README.md](mobile/README.md) | 移动端打包指南 |
 
-### 连接
-```
-ws://your-domain/ws?token=YOUR_JWT_TOKEN
-```
+## 🤝 贡献
 
-### 消息格式
-```json
-{
-  "type": "chat",
-  "from_id": 1001,
-  "to_id": 1002,
-  "group_id": 0,
-  "content": "Hello world",
-  "timestamp": 1699999999999
-}
-```
+欢迎提交Issue和Pull Request！
 
-### 消息类型
-- chat: 聊天消息
-- typing: 正在输入
-- read: 已读回执
-- recall: 撤回消息
-- notify: 系统通知
+## 📄 许可证
 
-## 🎨 UI 主题配置
+MIT License
 
-### 内置主题
-| 主题名称 | 说明 |
-|----------|------|
-| modern | 现代化蓝白主题（默认） |
-| dark | 暗黑主题 |
-| ocean | 海洋蓝绿主题 |
-| purple | 紫色主题 |
+---
 
-### 自定义主题
-在 `Chat.tsx` 中修改 `THEMES` 配置即可。
-
-## 🔐 安全说明
-
-### 生产环境建议
-1. 配置 HTTPS（必须）
-2. 修改 JWT_SECRET 为强密码
-3. 开启 RateLimit
-4. 定期备份数据库
-5. 使用 WAF 防护
-6. 定期更新依赖包
-
-### 防攻击措施
-- ✅ 请求限流
-- ✅ SQL 注入防护
-- ✅ XSS 防护
-- ✅ CSRF 防护
-- ✅ 密码哈希存储
-- ✅ 敏感操作确认
-
-## 📈 性能优化建议
-
-### 单机配置（5万用户）
-- CPU: 4核+
-- 内存: 8GB+
-- 磁盘: SSD
-- MySQL: 8GB内存池
-- Redis: 2GB+
-
-### 集群配置（50万+用户）
-- 3台以上应用服务器
-- MySQL 主从复制
-- Redis 集群
-- MongoDB 分片集群
-- CDN加速静态资源
-
-## 📚 二次开发指南
-
-### 项目结构
-```
-chat-system-pro/
-├── backend/
-│   ├── config/         # 配置
-│   ├── handlers/       # API 处理器
-│   ├── middleware/     # 中间件
-│   ├── models/         # 数据模型
-│   ├── services/       # 业务逻辑
-│   ├── websocket/      # WebSocket
-│   └── main.go
-├── web/
-│   ├── src/
-│   │   ├── components/ # 组件
-│   │   ├── pages/      # 页面
-│   │   ├── services/   # API
-│   │   └── store/      # 状态
-├── mobile/
-│   ├── pages/
-│   ├── store/
-│   └── utils/
-├── docker/
-└── docker-compose.yml
-```
-
-### 添加新功能
-1. 在 `models/` 定义数据结构
-2. 在 `services/` 实现业务逻辑
-3. 在 `handlers/` 添加 API
-4. 在前端 `pages/` 实现界面
-
-## 🐛 故障排查
-
-### 常见问题
-**端口被占用**
-```bash
-# 修改 docker-compose.yml 的 ports
-```
-
-**数据库连接失败**
-```bash
-# 检查 MySQL 是否启动
-docker-compose logs mysql
-
-# 检查网络连接
-docker-compose exec mysql ping -c 3 127.0.0.1
-```
-
-**WebSocket 连接断开**
-```bash
-# 检查 Nginx 配置
-# 确认 PingInterval 设置
-```
-
-## 📞 技术支持
-
-- 问题反馈：提交 Issue
-- 技术交流：待开放讨论区
-- 定制开发：联系作者
-
-## 📄 License
-
-MIT License - 可商用
+**知信** - 让沟通更简单 🚀

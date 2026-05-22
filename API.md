@@ -13,7 +13,8 @@
 9. [朋友圈接口](#9-朋友圈接口)
 10. [支付接口](#10-支付接口)
 11. [管理员接口](#11-管理员接口)
-12. [WebSocket接口](#12-websocket接口)
+12. [系统配置接口](#12-系统配置接口)
+13. [WebSocket接口](#13-websocket接口)
 
 ---
 
@@ -1907,9 +1908,165 @@ PUT /admin/system/configs
 
 ---
 
-## 12. WebSocket接口
+## 12. 系统配置接口
 
-### 12.1 连接WebSocket
+### 12.1 获取系统配置（公开接口）
+
+**请求**
+```
+GET /api/v1/system/config
+```
+
+**响应**
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "app_name": "知信",
+    "app_version": "v1.0.0",
+    "app_description": "知信 - 让沟通更简单",
+    "logo_url": "https://example.com/logo.png",
+    "favicon_url": "https://example.com/favicon.ico",
+    "theme_color": "#07c160",
+    "theme_secondary": "#576b95",
+    "ui_template": "modern",
+    "maintenance_mode": false,
+    "maintenance_msg": "",
+    "created_at": "2024-01-01 12:00:00",
+    "updated_at": "2024-01-01 12:00:00"
+  }
+}
+```
+
+### 12.2 更新系统配置（管理员）
+
+**请求**
+```
+PUT /api/v1/admin/system/config
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**请求体**
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| app_name | string | 否 | 系统名称 |
+| app_version | string | 否 | 版本号 |
+| app_description | string | 否 | 系统描述 |
+| theme_color | string | 否 | 主题色 |
+| theme_secondary | string | 否 | 次要颜色 |
+| ui_template | string | 否 | UI模板 (modern/classic/minimal) |
+
+```json
+{
+  "app_name": "知信",
+  "app_version": "v1.0.1",
+  "app_description": "知信 - 让沟通更简单",
+  "theme_color": "#07c160",
+  "theme_secondary": "#576b95",
+  "ui_template": "modern"
+}
+```
+
+**响应**
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": { ... }
+}
+```
+
+### 12.3 上传Logo（管理员）
+
+**请求**
+```
+POST /api/v1/admin/system/logo
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**请求体**
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | Logo图片文件，支持png/jpg/jpeg，最大2MB |
+
+**响应**
+```json
+{
+  "code": 200,
+  "message": "上传成功",
+  "data": {
+    "url": "https://example.com/uploads/logo/xxx.png"
+  }
+}
+```
+
+### 12.4 上传图标（管理员）
+
+**请求**
+```
+POST /api/v1/admin/system/favicon
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**请求体**
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | Favicon图标文件，支持ico/png，最大500KB |
+
+**响应**
+```json
+{
+  "code": 200,
+  "message": "上传成功",
+  "data": {
+    "url": "https://example.com/uploads/favicon/xxx.ico"
+  }
+}
+```
+
+### 12.5 设置维护模式（管理员）
+
+**请求**
+```
+POST /api/v1/admin/system/maintenance
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**请求体**
+```json
+{
+  "mode": true,
+  "message": "系统维护中，请稍后再试"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| mode | bool | 是 | 是否开启维护模式 |
+| message | string | 否 | 维护提示消息 |
+
+**响应**
+```json
+{
+  "code": 200,
+  "message": "设置成功",
+  "data": {
+    "maintenance_mode": true
+  }
+}
+```
+
+---
+
+## 13. WebSocket接口
+
+### 13.1 连接WebSocket
 
 **请求**
 ```

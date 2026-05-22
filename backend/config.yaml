@@ -1,7 +1,7 @@
 server:
   port: 8080
   mode: debug
-  name: ChatSystemPro
+  name: 知信
 
 database:
   host: localhost
@@ -54,17 +54,14 @@ security:
   captcha_enabled: false
   rate_limit_enabled: true
 
-# 文件存储配置
 storage:
-  type: local  # local, oss, s3
-  # OSS 配置
+  type: local
   oss:
     endpoint: 
     access_key: 
     secret_key: 
     bucket: 
     domain: 
-  # S3 配置
   s3:
     region: us-east-1
     endpoint: 
@@ -73,9 +70,8 @@ storage:
     bucket: 
     domain: 
 
-# 推送服务配置
 push:
-  provider: jpush  # jpush, getui
+  provider: jpush
   jpush:
     app_key: 
     app_secret: 
@@ -84,7 +80,6 @@ push:
     app_key: 
     master_secret: 
 
-# 微信小程序配置
 miniprogram:
   wechat:
     app_id: 
@@ -92,3 +87,6 @@ miniprogram:
 
 system:
   ui_default: modern
+  app_name: 知信
+  app_version: v1.0.0
+  app_description: 知信 - 让沟通更简单

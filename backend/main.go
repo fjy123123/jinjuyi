@@ -109,6 +109,12 @@ func main() {
 		authed.GET("/payment/points/history", handlers.GetPointsHistory)
 	}
 
+	// 系统配置接口（公开接口）
+	system := api.Group("/system")
+	{
+		system.GET("/config", handlers.GetSystemConfig)
+	}
+
 	// 管理员接口
 	admin := api.Group("/admin")
 	admin.Use(middleware.AuthMiddleware())
@@ -123,6 +129,12 @@ func main() {
 		admin.POST("/users/points", handlers.AdminAddPoints)
 		admin.GET("/system/configs", handlers.GetSystemConfigs)
 		admin.PUT("/system/configs", handlers.UpdateSystemConfig)
+
+		// 系统配置管理
+		admin.PUT("/system/config", handlers.UpdateSystemConfig)
+		admin.POST("/system/logo", handlers.UploadLogo)
+		admin.POST("/system/favicon", handlers.UploadFavicon)
+		admin.POST("/system/maintenance", handlers.SetMaintenanceMode)
 	}
 
 	log.Printf("Server starting on port %d", config.Cfg.Server.Port)
