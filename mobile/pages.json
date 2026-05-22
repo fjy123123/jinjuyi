@@ -1,0 +1,119 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "即时聊天",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/chat/chat",
+      "style": {
+        "navigationBarTitleText": "聊天",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/friends/friends",
+      "style": {
+        "navigationBarTitleText": "好友"
+      }
+    },
+    {
+      "path": "pages/contacts/contacts",
+      "style": {
+        "navigationBarTitleText": "通讯录"
+      }
+    },
+    {
+      "path": "pages/mine/mine",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/register/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/group/group",
+      "style": {
+        "navigationBarTitleText": "群聊"
+      }
+    },
+    {
+      "path": "pages/moment/moment",
+      "style": {
+        "navigationBarTitleText": "朋友圈"
+      }
+    },
+    {
+      "path": "pages/redpacket/redpacket",
+      "style": {
+        "navigationBarTitleText": "红包"
+      }
+    }
+  ],
+  
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "即时聊天",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#3cc51f",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tabbar/message.png",
+        "selectedIconPath": "static/tabbar/message-active.png",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/contacts/contacts",
+        "iconPath": "static/tabbar/contacts.png",
+        "selectedIconPath": "static/tabbar/contacts-active.png",
+        "text": "通讯录"
+      },
+      {
+        "pagePath": "pages/moment/moment",
+        "iconPath": "static/tabbar/moment.png",
+        "selectedIconPath": "static/tabbar/moment-active.png",
+        "text": "发现"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "iconPath": "static/tabbar/mine.png",
+        "selectedIconPath": "static/tabbar/mine-active.png",
+        "text": "我的"
+      }
+    ]
+  },
+  
+  "uniIdRouter": {},
+  
+  "condition": {
+    "current": 0,
+    "list": [
+      {
+        "name": "聊天页面",
+        "path": "pages/chat/chat",
+        "query": "id=1"
+      }
+    ]
+  }
+}

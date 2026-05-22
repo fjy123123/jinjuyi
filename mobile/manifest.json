@@ -1,0 +1,91 @@
+export default {
+  name: '即时聊天',
+  appid: '__UNI__CHATSYSTEM',
+  description: '商业级即时聊天应用',
+  versionName: '1.0.0',
+  versionCode: '100',
+  transformPx: false,
+  
+  app-plus: {
+    usingComponents: true,
+    splashscreen: {
+      alwaysShowBeforeRender: true,
+      waiting: true,
+      autoclose: true,
+      delay: 0
+    },
+    modules: {},
+    distribute: {
+      android: {
+        permissions: [
+          '<uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>',
+          '<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"/>',
+          '<uses-permission android:name="android.permission.VIBRATE"/>',
+          '<uses-permission android:name="android.permission.READ_LOGS"/>',
+          '<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>',
+          '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
+          '<uses-permission android:name="android.permission.CAMERA"/>',
+          '<uses-permission android:name="android.permission.RECORD_AUDIO"/>',
+          '<uses-permission android:name="android.permission.GET_ACCOUNTS"/>',
+          '<uses-permission android:name="android.permission.READ_PHONE_STATE"/>',
+          '<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>',
+          '<uses-permission android:name="android.permission.WAKE_LOCK"/>',
+          '<uses-permission android:name="android.permission.WRITE_SETTINGS"/>',
+          '<uses-permission android:name="android.permission.FLASHLIGHT"/>',
+          '<uses-feature android:name="android.hardware.camera.autofocus"/>',
+          '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>',
+          '<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>',
+          '<uses-permission android:name="android.permission.INTERNET"/>'
+        ]
+      },
+      ios: {
+        dSYMs: false,
+        privacyDescription: {
+          NSPhotoLibraryUsageDescription: '需要访问您的相册来发送图片',
+          NSCameraUsageDescription: '需要访问您的相机来拍照',
+          NSMicrophoneUsageDescription: '需要访问您的麦克风来发送语音',
+          NSUserNotificationUsageDescription: '需要发送通知来提醒您收到新消息'
+        }
+      }
+    }
+  },
+  
+  quickapp: {},
+  
+  mp-weixin: {
+    appid: '',
+    setting: {
+      urlCheck: false,
+      es6: true,
+      postcss: true,
+      minified: true
+    },
+    usingComponents: true
+  },
+  
+  mp-alipay: {
+    usingComponents: true
+  },
+  
+  mp-baidu: {
+    usingComponents: true
+  },
+  
+  mp-toutiao: {
+    usingComponents: true
+  },
+  
+  h5: {
+    title: '即时聊天',
+    domain: '',
+    router: {
+      mode: 'hash',
+      base: './'
+    },
+    optimization: {
+      treeShaking: {
+        enable: true
+      }
+    }
+  }
+}

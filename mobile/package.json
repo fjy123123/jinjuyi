@@ -1,0 +1,29 @@
+{
+  "name": "chat-system-pro-mobile",
+  "version": "1.0.0",
+  "description": "即时聊天移动应用",
+  "main": "main.js",
+  "scripts": {
+    "dev:h5": "uni",
+    "build:h5": "uni build",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "dev:app": "uni -p app",
+    "build:app": "uni build -p app",
+    "build:app-plus": "uni build -p app-plus",
+    "apk": "./build-apk.sh",
+    "ios": "./build-ios.sh"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "^3.0.0",
+    "@dcloudio/uni-app-plus": "^3.0.0",
+    "@dcloudio/uni-mp-weixin": "^3.0.0",
+    "@dcloudio/uni-h5": "^3.0.0"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.0.0",
+    "@dcloudio/uni-cli": "^3.0.0"
+  },
+  "author": "Chat System Pro",
+  "license": "MIT"
+}
