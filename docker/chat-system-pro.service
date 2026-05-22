@@ -1,0 +1,21 @@
+[Unit]
+Description=Chat System Pro - Docker Compose Service
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/fjya/jinjuyi
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+ExecReload=/usr/local/bin/docker-compose restart
+TimeoutStartSec=0
+Restart=on-failure
+RestartSec=10s
+User=fjya
+Group=docker
+
+[Install]
+WantedBy=multi-user.target
