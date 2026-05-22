@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     container_name: chat-mysql-pro
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-your_secure_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-your_secure_password}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-chat_system_pro}
       MYSQL_USER: ${MYSQL_USER:-chat_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chat_password
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chat_password}
     ports:
       - "3306:3306"
     volumes:
@@ -86,7 +86,7 @@ services:
       dockerfile: Dockerfile
     container_name: chat-frontend-pro
     ports:
-      - "80:80
+      - "80:80"
       - "443:443"
     volumes:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro

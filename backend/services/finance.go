@@ -282,7 +282,7 @@ func (s *WithdrawService) ApproveWithdraw(reviewerID uint, id uint, remark strin
 			UserID:      req.UserID,
 			Type:        models.PointsTypeWithdraw,
 			Amount:      -req.Points, // 负数表示扣减
-			Description: "提现将积分",
+			Description: "提现扣除积分",
 			RelatedID:   req.ID,
 		}
 		if err := tx.Create(pointsHistory).Error; err != nil {

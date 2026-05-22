@@ -90,11 +90,11 @@ func (s *RedPacketService) SendRedPacket(senderID uint, req *SendRedPacketReques
 		}
 		// 记录积分变动
 		pointsHistory := models.PointsHistory{
-			UserID:    senderID,
-			Change:    -int64(req.Amount),
-			Balance:   sender.Points - int64(req.Amount),
-			Type:      3, // 发红包
-			Remark:    "发红包",
+			UserID:      senderID,
+			Amount:      -int64(req.Amount),
+			Type:        models.PointsTypeConsume,
+			Description: "发红包",
+			RelatedID:   0,
 		}
 		if err := tx.Create(&pointsHistory).Error; err != nil {
 			tx.Rollback()
@@ -279,11 +279,11 @@ func (s *RedPacketService) GrabRedPacket(userID uint, redPacketID uint) (*models
 		}
 		// 记录积分变动
 		pointsHistory := models.PointsHistory{
-			UserID:    userID,
-			Change:    int64(amount),
-			Balance:   receiver.Points + int64(amount),
-			Type:      4, // 抢红包
-			Remark:    "抢红包",
+			UserID:      userID,
+			Amount:      int64(amount),
+			Type:        models.PointsTypeReward,
+			Description: "抢红包",
+			RelatedID:   redPacketID,
 		}
 		if err := tx.Create(&pointsHistory).Error; err != nil {
 			tx.Rollback()
