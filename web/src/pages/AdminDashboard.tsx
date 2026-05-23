@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Tag, Space } from 'antd';
+import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Tag, Space, Switch, InputNumber } from 'antd';
 import { 
   DashboardOutlined, 
   UserOutlined, 
@@ -7,7 +7,8 @@ import {
   SettingOutlined, 
   SmileOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined
+  CloseCircleOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -16,6 +17,16 @@ import api from '../services/api';
 
 const { Header, Content, Sider } = Layout;
 const { TextArea } = Input;
+
+interface SystemConfig {
+  id: number;
+  app_name: string;
+  app_version: string;
+  maintenance_mode: boolean;
+  maintenance_msg: string;
+  export_enabled: boolean;
+  export_max_records: number;
+}
 
 interface RechargeRequest {
   id: number;
@@ -57,11 +68,14 @@ const AdminDashboard: React.FC = () => {
   const [withdrawRequests, setWithdrawRequests] = useState<WithdrawRequest[]>([]);
   const [emojiCategories, setEmojiCategories] = useState<EmojiCategory[]>([]);
   const [emojis, setEmojis] = useState<EmojiItem[]>([]);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
   
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
+  const [configModalVisible, setConfigModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [emojiForm] = Form.useForm();
+  const [configForm] = Form.useForm();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -76,6 +90,8 @@ const AdminDashboard: React.FC = () => {
       loadWithdrawRequests();
     } else if (selectedKey === 'emoji') {
       loadEmojiCategories();
+    } else if (selectedKey === 'settings') {
+      loadSystemConfig();
     }
   }, [selectedKey, isAuthenticated, navigate]);
 
@@ -112,6 +128,23 @@ const AdminDashboard: React.FC = () => {
       setEmojiCategories(response.data.data || []);
     } catch (error) {
       message.error('加载表情包分类失败');
+    }
+  };
+
+  const loadSystemConfig = async () => {
+    try {
+      const response = await api.get('/system/config');
+      setSystemConfig(response.data.data);
+      configForm.setFieldsValue({
+        app_name: response.data.data.app_name,
+        maintenance_mode: response.data.data.maintenance_mode,
+        maintenance_msg: response.data.data.maintenance_msg,
+        export_enabled: response.data.data.export_enabled,
+        export_max_records: response.data.data.export_max_records
+      });
+      setConfigModalVisible(true);
+    } catch (error) {
+      message.error('加载系统配置失败');
     }
   };
 
@@ -154,6 +187,21 @@ const AdminDashboard: React.FC = () => {
       loadEmojiCategories();
     } catch (error) {
       message.error('删除失败');
+    }
+  };
+
+  const handleUpdateConfig = async (values: any) => {
+    try {
+      await api.put('/admin/system/configs', {
+        ...values,
+        maintenance_mode: values.maintenance_mode,
+        export_enabled: values.export_enabled,
+        export_max_records: values.export_max_records
+      });
+      message.success('配置更新成功');
+      setConfigModalVisible(false);
+    } catch (error) {
+      message.error('更新配置失败');
     }
   };
 
@@ -344,6 +392,65 @@ const AdminDashboard: React.FC = () => {
           </Form.Item>
           <Form.Item label="图标URL" name="icon">
             <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="系统设置"
+        open={configModalVisible}
+        onCancel={() => setConfigModalVisible(false)}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={configForm}
+          onFinish={handleUpdateConfig}
+          layout="vertical"
+          initialValues={systemConfig || {}}
+        >
+          <Form.Item label="应用名称" name="app_name">
+            <Input />
+          </Form.Item>
+
+          <Form.Item 
+            label="维护模式" 
+            name="maintenance_mode" 
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item label="维护消息" name="maintenance_msg">
+            <TextArea rows={3} />
+          </Form.Item>
+
+          <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, marginTop: 16 }}>
+            <h4>聊天记录导出设置</h4>
+            
+            <Form.Item 
+              label="允许导出聊天记录" 
+              name="export_enabled"
+              valuePropName="checked"
+              tooltip="关闭后用户将无法导出聊天记录"
+            >
+              <Switch />
+            </Form.Item>
+
+            <Form.Item 
+              label="最大导出记录数" 
+              name="export_max_records"
+              tooltip="单次导出的最大消息记录数量"
+            >
+              <InputNumber min={100} max={10000} step={100} />
+            </Form.Item>
+          </div>
+
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit">保存配置</Button>
+              <Button onClick={() => setConfigModalVisible(false)}>取消</Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>

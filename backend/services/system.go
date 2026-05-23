@@ -32,6 +32,8 @@ func (s *SystemConfigService) CreateDefaultConfig() (*models.SystemConfig, error
 		ThemeColor:     "#07c160",
 		ThemeSecondary: "#576b95",
 		UiTemplate:     "modern",
+		ExportEnabled:  true,
+		ExportMaxRecords: 1000,
 	}
 
 	err := s.db.Create(defaultConfig).Error
@@ -75,6 +77,10 @@ func (s *SystemConfigService) UpdateConfig(update *models.SystemConfig) (*models
 	config.MaintenanceMode = update.MaintenanceMode
 	if update.MaintenanceMsg != "" {
 		config.MaintenanceMsg = update.MaintenanceMsg
+	}
+	config.ExportEnabled = update.ExportEnabled
+	if update.ExportMaxRecords > 0 {
+		config.ExportMaxRecords = update.ExportMaxRecords
 	}
 
 	err = s.db.Save(&config).Error
@@ -121,6 +127,24 @@ func (s *SystemConfigService) UploadFavicon(filePath string) (string, error) {
 	config.FaviconURL = url
 	err = s.db.Save(&config).Error
 	return url, err
+}
+
+func (s *SystemConfigService) IsExportEnabled() bool {
+	var config models.SystemConfig
+	err := s.db.First(&config).Error
+	if err != nil {
+		return true
+	}
+	return config.ExportEnabled
+}
+
+func (s *SystemConfigService) GetExportMaxRecords() int {
+	var config models.SystemConfig
+	err := s.db.First(&config).Error
+	if err != nil {
+		return 1000
+	}
+	return config.ExportMaxRecords
 }
 
 var SystemConfigService = NewSystemConfigService(config.DB)

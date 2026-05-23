@@ -8,6 +8,7 @@ import (
 
 	"chat-system-pro/config"
 	"chat-system-pro/models"
+	"chat-system-pro/services"
 	"chat-system-pro/utils"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,12 @@ import (
 
 // ExportChatHistory 导出聊天记录（CSV格式）
 func ExportChatHistory(c *gin.Context) {
+	// 检查导出功能是否开启
+	if !services.SystemConfigService.IsExportEnabled() {
+		utils.ErrorResponse(c, 403, "聊天记录导出功能已关闭")
+		return
+	}
+
 	userID := c.GetUint("user_id")
 	friendIDStr := c.Query("friend_id")
 	groupIDStr := c.Query("group_id")
@@ -64,6 +71,10 @@ func ExportChatHistory(c *gin.Context) {
 	}
 
 	ctx := context.TODO()
+	
+	// 获取最大导出记录数
+	maxRecords := services.SystemConfigService.GetExportMaxRecords()
+	
 	cursor, err := config.MongoDBCollection.Collection("messages").Find(ctx, filter)
 	if err != nil {
 		utils.ErrorResponse(c, 500, "获取消息失败")
@@ -77,6 +88,12 @@ func ExportChatHistory(c *gin.Context) {
 		return
 	}
 
+	// 限制导出记录数
+	exportMessages := messages
+	if len(messages) > maxRecords {
+		exportMessages = messages[:maxRecords]
+	}
+
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", "attachment; filename=chat_history_"+time.Now().Format("20060102")+".csv")
 	writer := csv.NewWriter(c.Writer)
@@ -84,8 +101,8 @@ func ExportChatHistory(c *gin.Context) {
 
 	writer.Write([]string{"时间", "发送者ID", "接收者/群ID", "消息类型", "内容", "是否已读"})
 
-	for _, msg := range messages {
-		var msgType := "文本"
+	for _, msg := range exportMessages {
+		var msgType = "文本"
 		if msg.MessageType == 2 {
 			msgType = "图片"
 		} else if msg.MessageType == 3 {
