@@ -1,0 +1,46 @@
+# 知信聊天系统 - 后端服务单元 (集群多实例版)
+# 包含 3 个后端实例，适合高并发部署
+# 安装: sudo cp zhixin-backend@.service /etc/systemd/system/
+# 启用实例1: sudo systemctl enable zhixin-backend@1
+# 启用实例2: sudo systemctl enable zhixin-backend@2
+# 启用实例3: sudo systemctl enable zhixin-backend@3
+# 启动全部: sudo systemctl start zhixin-backend@{1..3}
+
+[Unit]
+Description=知信聊天系统后端服务实例 %i
+Documentation=https://github.com/your-org/zhixin
+After=network.target mongodb.service mysql.service redis.service nginx.service
+Wants=mongodb.service mysql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/zhixin/backend
+Environment="GIN_MODE=release"
+Environment="PORT=808%i"
+Environment="NODE_ID=backend-%i"
+EnvironmentFile=/opt/zhixin/backend/.env.cluster
+ExecStart=/opt/zhixin/backend/backend
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zhixin/backend/logs
+PrivateTmp=true
+
+# 资源限制
+LimitNOFILE=65535
+LimitNPROC=4096
+
+# 软硬件限制（每个实例）
+MemoryMax=1G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

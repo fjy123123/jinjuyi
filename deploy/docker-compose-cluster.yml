@@ -1,0 +1,265 @@
+# 知信集群部署 Docker Compose 配置
+# 支持水平扩展的微服务架构
+
+version: '3.8'
+
+services:
+  # ============ 基础设施层 ============
+  
+  # MongoDB 副本集 - 保证多节点数据一致性
+  mongodb:
+    image: mongo:7.0
+    container_name: zhixin_mongodb
+    restart: unless-stopped
+    command: [
+      "mongod",
+      "--replSet", "rs0",
+      "--bind_ip_all",
+      "--port", "27017"
+    ]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - zhixin_cluster
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL 主从集群
+  mysql_primary:
+    image: mysql:8.0
+    container_name: zhixin_mysql_primary
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Zhixin2024Secure}
+      MYSQL_DATABASE: zhixin
+      MYSQL_USER: zhixin
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-zhixin2024pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_primary_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - zhixin_cluster
+    command: --default-authentication-plugin=mysql_native_password --server-id=1
+
+  # Redis 集群模式 - 3主3从
+  redis_cluster_1:
+    image: redis:7-alpine
+    container_name: zhixin_redis_1
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_1_data:/data
+    networks:
+      - zhixin_cluster
+    command: redis-server --appendonly yes
+
+  redis_cluster_2:
+    image: redis:7-alpine
+    container_name: zhixin_redis_2
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_2_data:/data
+    networks:
+      - zhixin_cluster
+
+  redis_cluster_3:
+    image: redis:7-alpine
+    container_name: zhixin_redis_3
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_3_data:/data
+    networks:
+      - zhixin_cluster
+
+  # Nginx 负载均衡器
+  nginx_lb:
+    image: nginx:alpine
+    container_name: zhixin_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-cluster.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend_1
+      - backend_2
+      - backend_3
+    networks:
+      - zhixin_cluster
+
+  # ============ 应用层 - 多实例后端 ============
+  
+  # 后端实例 1
+  backend_1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zhixin_backend_1
+    restart: unless-stopped
+    environment:
+      - NODE_ID=backend_1
+      - GIN_MODE=release
+      - PORT=8080
+      - MONGODB_URI=mongodb://mongodb:27017/zhixin
+      - MYSQL_HOST=mysql_primary
+      - MYSQL_PORT=3306
+      - MYSQL_USER=zhixin
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-zhixin2024pass}
+      - MYSQL_DATABASE=zhixin
+      - REDIS_HOST=redis_cluster_1
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - ADMIN_SECRET=${ADMIN_SECRET:-admin-secret-key}
+    volumes:
+      - ./backend:/app
+      - backend_1_logs:/app/logs
+    networks:
+      - zhixin_cluster
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # 后端实例 2
+  backend_2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zhixin_backend_2
+    restart: unless-stopped
+    environment:
+      - NODE_ID=backend_2
+      - GIN_MODE=release
+      - PORT=8080
+      - MONGODB_URI=mongodb://mongodb:27017/zhixin
+      - MYSQL_HOST=mysql_primary
+      - MYSQL_PORT=3306
+      - MYSQL_USER=zhixin
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-zhixin2024pass}
+      - MYSQL_DATABASE=zhixin
+      - REDIS_HOST=redis_cluster_1
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - ADMIN_SECRET=${ADMIN_SECRET:-admin-secret-key}
+    volumes:
+      - ./backend:/app
+      - backend_2_logs:/app/logs
+    networks:
+      - zhixin_cluster
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # 后端实例 3
+  backend_3:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zhixin_backend_3
+    restart: unless-stopped
+    environment:
+      - NODE_ID=backend_3
+      - GIN_MODE=release
+      - PORT=8080
+      - MONGODB_URI=mongodb://mongodb:27017/zhixin
+      - MYSQL_HOST=mysql_primary
+      - MYSQL_PORT=3306
+      - MYSQL_USER=zhixin
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-zhixin2024pass}
+      - MYSQL_DATABASE=zhixin
+      - REDIS_HOST=redis_cluster_1
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - ADMIN_SECRET=${ADMIN_SECRET:-admin-secret-key}
+    volumes:
+      - ./backend:/app
+      - backend_3_logs:/app/logs
+    networks:
+      - zhixin_cluster
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # ============ 前端 ============
+  
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: zhixin_web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    networks:
+      - zhixin_cluster
+    depends_on:
+      - nginx_lb
+
+# ============ 网络定义 ============
+networks:
+  zhixin_cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ============ 持久化存储 ============
+volumes:
+  # 数据库
+  mongodb_data:
+    driver: local
+  mysql_primary_data:
+    driver: local
+  
+  # Redis
+  redis_1_data:
+    driver: local
+  redis_2_data:
+    driver: local
+  redis_3_data:
+    driver: local
+  
+  # 日志
+  nginx_logs:
+    driver: local
+  backend_1_logs:
+    driver: local
+  backend_2_logs:
+    driver: local
+  backend_3_logs:
+    driver: local

@@ -1,0 +1,38 @@
+# 知信聊天系统 - 后端服务单元 (单实例版)
+# 安装: sudo cp zhixin-backend.service /etc/systemd/system/
+# 启用: sudo systemctl enable zhixin-backend
+# 启动: sudo systemctl start zhixin-backend
+
+[Unit]
+Description=知信聊天系统后端服务
+Documentation=https://github.com/your-org/zhixin
+After=network.target mongodb.service mysql.service redis.service
+Wants=mongodb.service mysql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/zhixin/backend
+Environment="GIN_MODE=release"
+Environment="PORT=8080"
+Environment="NODE_ID=backend-1"
+ExecStart=/opt/zhixin/backend/backend
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zhixin/backend/logs
+PrivateTmp=true
+
+# 资源限制
+LimitNOFILE=65535
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

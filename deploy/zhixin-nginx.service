@@ -1,0 +1,30 @@
+# 知信聊天系统 - Nginx 负载均衡器服务单元
+# 安装: sudo cp zhixin-nginx.service /etc/systemd/system/
+# 启用: sudo systemctl enable zhixin-nginx
+# 启动: sudo systemctl start zhixin-nginx
+
+[Unit]
+Description=知信聊天系统 Nginx 负载均衡器
+Documentation=https://github.com/your-org/zhixin
+After=network.target zhixin-backend@1.service zhixin-backend@2.service zhixin-backend@3.service
+Wants=zhixin-backend@1.service zhixin-backend@2.service zhixin-backend@3.service
+
+[Service]
+Type=forking
+ExecStartPre=/usr/sbin/nginx -t
+ExecStart=/usr/sbin/nginx
+ExecReload=/usr/sbin/nginx -s reload
+ExecStop=/usr/sbin/nginx -s quit
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/nginx
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

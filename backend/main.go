@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"chat-system-pro/config"
 	"chat-system-pro/handlers"
 	"chat-system-pro/middleware"
 	"chat-system-pro/models"
 	"chat-system-pro/services"
+	"chat-system-pro/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +22,14 @@ func main() {
 	config.InitDatabase()
 	config.InitMongoDB()
 	config.InitRedis()
+
+	// 初始化集群Hub（支持多节点部署）
+	nodeID := os.Getenv("NODE_ID")
+	if nodeID == "" {
+		nodeID = "single-node"
+	}
+	utils.InitClusterHub(nodeID)
+	log.Printf("集群节点 ID: %s", nodeID)
 
 	models.AutoMigrate(config.DB)
 
