@@ -46,6 +46,7 @@ type UserSettings struct {
 	Language        string `gorm:"size:10;default:zh-CN" json:"language"`
 	DndStart        string `gorm:"size:10" json:"dnd_start"` // 免打扰开始时间
 	DndEnd          string `gorm:"size:10" json:"dnd_end"`   // 免打扰结束时间
+	AutoDeleteDays  int    `gorm:"default:0" json:"auto_delete_days"` // 消息自动删除天数，0表示不删除
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
@@ -197,6 +198,7 @@ type SystemConfig struct {
 	MaintenanceMsg    string         `gorm:"size:500" json:"maintenance_msg"`
 	ExportEnabled     bool           `gorm:"default:true" json:"export_enabled"`
 	ExportMaxRecords  int            `gorm:"default:1000" json:"export_max_records"`
+	RecallTimeout     int            `gorm:"default:300" json:"recall_timeout"` // 消息撤回超时时间（秒），默认5分钟
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 	DeletedAt         gorm.DeletedAt `gorm:"index" json:"-"`
@@ -247,6 +249,41 @@ type RedPacketDetail struct {
 	CreatedAt   time.Time `json:"created_at"`
 
 	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+// ==================== 充值提现相关 ====================
+
+// RechargeRequest 充值申请
+type RechargeRequest struct {
+	ID          uint       `gorm:"primarykey" json:"id"`
+	UserID      uint       `gorm:"index" json:"user_id"`
+	Amount      float64    `json:"amount"`
+	Points      int64      `json:"points"`
+	ProofImage  string     `gorm:"size:500" json:"proof_image"` // 支付凭证图片
+	Status      int        `gorm:"default:0" json:"status"`     // 0:待审核 1:已通过 2:已拒绝
+	HandlerID   uint       `json:"handler_id"`
+	HandleNote  string     `gorm:"size:500" json:"handle_note"`
+	HandledAt   *time.Time `json:"handled_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	User        User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+// WithdrawRequest 提现申请
+type WithdrawRequest struct {
+	ID          uint       `gorm:"primarykey" json:"id"`
+	UserID      uint       `gorm:"index" json:"user_id"`
+	Amount      float64    `json:"amount"`
+	Points      int64      `json:"points"`
+	PayType     int        `json:"pay_type"` // 1:微信 2:支付宝
+	AccountInfo string     `gorm:"size:500" json:"account_info"` // 收款账户信息
+	Status      int        `gorm:"default:0" json:"status"`      // 0:待审核 1:已通过 2:已拒绝
+	HandlerID   uint       `json:"handler_id"`
+	HandleNote  string     `gorm:"size:500" json:"handle_note"`
+	HandledAt   *time.Time `json:"handled_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	User        User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 // ==================== MongoDB Models ====================
@@ -330,6 +367,40 @@ type EmojiItem struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+// ==================== 通话相关 ====================
+
+// CallRecord 通话记录
+type CallRecord struct {
+	ID         uint       `gorm:"primarykey" json:"id"`
+	SessionID  string     `gorm:"size:100;index" json:"session_id"`
+	CallerID   uint       `gorm:"index" json:"caller_id"`
+	CalleeID   uint       `gorm:"index" json:"callee_id"`
+	GroupID    uint       `gorm:"index" json:"group_id,omitempty"`
+	Type       int        `json:"type"` // 1:视频 2:语音
+	Status     int        `json:"status"` // 0:呼叫中 1:通话中 2:已结束 3:已拒绝
+	StartTime  time.Time  `json:"start_time"`
+	EndTime    time.Time  `json:"end_time,omitempty"`
+	Duration   int        `json:"duration"` // 通话时长（秒）
+	CreatedAt  time.Time  `json:"created_at"`
+	
+	Caller User `gorm:"foreignKey:CallerID" json:"caller,omitempty"`
+	Callee User `gorm:"foreignKey:CalleeID" json:"callee,omitempty"`
+}
+
+// ==================== 2FA双因素认证 ====================
+
+// TwoFactorAuth 双因素认证
+type TwoFactorAuth struct {
+	ID           uint       `gorm:"primarykey" json:"id"`
+	UserID       uint       `gorm:"uniqueIndex" json:"user_id"`
+	Secret       string     `gorm:"size:100;not null" json:"-"` // TOTP密钥
+	Enabled      bool       `gorm:"default:false" json:"enabled"`
+	BackupCodes  string     `gorm:"size:500" json:"-"` // 备用验证码（JSON数组）
+	VerifiedAt   *time.Time `json:"verified_at"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
 // AutoMigrate 自动迁移
 func AutoMigrate(db *gorm.DB) {
 	db.AutoMigrate(
@@ -353,5 +424,7 @@ func AutoMigrate(db *gorm.DB) {
 		&MessageReactionRecord{},
 		&EmojiCategory{},
 		&EmojiItem{},
+		&CallRecord{},
+		&TwoFactorAuth{},
 	)
 }

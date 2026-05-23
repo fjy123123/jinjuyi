@@ -86,6 +86,22 @@ func main() {
 		authed.POST("/messages/forward", handlers.ForwardMessage)
 		authed.GET("/messages/search", handlers.SearchMessages)
 
+		// 通话功能
+		authed.POST("/calls", handlers.InitiateCall)
+		authed.POST("/calls/:session_id/answer", handlers.AnswerCall)
+		authed.POST("/calls/:session_id/reject", handlers.RejectCall)
+		authed.POST("/calls/:session_id/end", handlers.EndCall)
+		authed.GET("/calls/history", handlers.GetCallHistory)
+		authed.GET("/calls/signal", handlers.WebRTCSignal)
+
+		// 2FA双因素认证
+		authed.GET("/2fa/status", handlers.Get2FAStatus)
+		authed.POST("/2fa/enable", handlers.Enable2FA)
+		authed.POST("/2fa/verify-enable", handlers.VerifyAndEnable2FA)
+		authed.POST("/2fa/disable", handlers.Disable2FA)
+		authed.POST("/2fa/verify", handlers.Verify2FA)
+		authed.POST("/2fa/regenerate-codes", handlers.RegenerateBackupCodes)
+
 		authed.POST("/groups", handlers.CreateGroup)
 		authed.GET("/groups", handlers.GetMyGroups)
 		authed.GET("/groups/:group_id", handlers.GetGroupInfo)
