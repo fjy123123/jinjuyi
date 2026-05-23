@@ -65,15 +65,26 @@ func main() {
 		authed.POST("/friends", handlers.AddFriend)
 		authed.DELETE("/friends/:friend_id", handlers.DeleteFriend)
 
+		// 会话管理
 		authed.GET("/conversations", handlers.GetConversations)
 		authed.GET("/conversations/unread", handlers.GetUnreadCount)
+		authed.POST("/conversations/pin", handlers.SetConversationPin)
+		authed.POST("/conversations/mute", handlers.SetConversationMute)
+		authed.POST("/conversations/archive", handlers.ArchiveConversation)
+		authed.GET("/conversations/archived", handlers.GetArchivedConversations)
 
+		// 消息功能
 		authed.POST("/messages", handlers.SendMessage)
 		authed.GET("/messages/private/:friend_id", handlers.GetPrivateMessages)
 		authed.GET("/messages/group/:group_id", handlers.GetGroupMessages)
 		authed.POST("/messages/read", handlers.MarkAsRead)
 		authed.POST("/messages/:message_id/recall", handlers.RecallMessage)
 		authed.GET("/messages/export", handlers.ExportChatHistory)
+		authed.POST("/messages/:message_id/reaction", handlers.AddReaction)
+		authed.DELETE("/messages/:message_id/reaction", handlers.RemoveReaction)
+		authed.GET("/messages/:message_id/reactions", handlers.GetReactions)
+		authed.POST("/messages/forward", handlers.ForwardMessage)
+		authed.GET("/messages/search", handlers.SearchMessages)
 
 		authed.POST("/groups", handlers.CreateGroup)
 		authed.GET("/groups", handlers.GetMyGroups)
