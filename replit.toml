@@ -1,0 +1,24 @@
+run = "go run main.go"
+language = "go"
+entrypoint = "backend/main.go"
+
+[deployment]
+run = ["go", "run", "main.go"]
+deploymentTarget = "cloudrun"
+build = ["sh", "-c", "cd backend && go build -o server main.go"]
+port = 8080
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[[ports]]
+localPort = 3306
+externalPort = 3306
+
+[[ports]]
+localPort = 27017
+externalPort = 27017
+
+[[ports]]
+localPort = 6379
+externalPort = 6379
