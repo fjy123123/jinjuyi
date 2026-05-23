@@ -159,6 +159,7 @@ func main() {
 	system := api.Group("/system")
 	{
 		system.GET("/config", handlers.GetSystemConfig)
+		system.PUT("/config", handlers.UpdateSystemConfigForSystem)
 	}
 
 	admin := api.Group("/admin")

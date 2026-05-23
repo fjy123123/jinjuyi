@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"chat-system-pro/backend/models"
-	"chat-system-pro/backend/services"
-	"chat-system-pro/backend/utils"
+	"chat-system-pro/models"
+	"chat-system-pro/services"
+	"chat-system-pro/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"

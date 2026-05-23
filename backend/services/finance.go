@@ -1,8 +1,8 @@
 package services
 
 import (
-	"chat-system-pro/backend/config"
-	"chat-system-pro/backend/models"
+	"chat-system-pro/config"
+	"chat-system-pro/models"
 	"errors"
 	"time"
 

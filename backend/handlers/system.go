@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"chat-system-pro/backend/models"
-	"chat-system-pro/backend/services"
+	"chat-system-pro/models"
+	"chat-system-pro/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +16,7 @@ func GetSystemConfig(c *gin.Context) {
 	c.JSON(200, gin.H{"code": 200, "message": "success", "data": config})
 }
 
-func UpdateSystemConfig(c *gin.Context) {
+func UpdateSystemConfigForSystem(c *gin.Context) {
 	var update models.SystemConfig
 	if err := c.ShouldBindJSON(&update); err != nil {
 		c.JSON(400, gin.H{"code": 400, "message": "参数错误", "error": err.Error()})
