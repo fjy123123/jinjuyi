@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"chat-system-pro/config"
-
-	"github.com/gorilla/websocket"
 )
 
 // ClusterHub 集群Hub - 支持多节点消息同步
@@ -78,6 +76,7 @@ func (h *ClusterHub) Run() {
 
 // muBroadcast 发送消息给所有本地客户端
 func (h *ClusterHub) muBroadcast(message []byte) {
+	h.mu.RLock()
 	for _, client := range h.Clients {
 		select {
 		case client.Send <- message:
@@ -86,10 +85,15 @@ func (h *ClusterHub) muBroadcast(message []byte) {
 			delete(h.Clients, client.ID)
 		}
 	}
+	h.mu.RUnlock()
 }
 
 // BroadcastToCluster 广播到集群所有节点
 func BroadcastToCluster(channel string, msgType string, data interface{}) {
+	if clusterHub == nil {
+		return
+	}
+	
 	msg := ClusterMessage{
 		FromNode: clusterHub.NodeID,
 		Type:     msgType,
@@ -142,15 +146,15 @@ type ClusterMessage struct {
 	Data     interface{} `json:"data"`
 }
 
-// RegisterClient 注册客户端
-func RegisterClient(client *Client) {
+// RegisterClientToCluster 注册客户端到集群Hub
+func RegisterClientToCluster(client *Client) {
 	if clusterHub != nil {
 		clusterHub.Register <- client
 	}
 }
 
-// UnregisterClient 注销客户端
-func UnregisterClient(client *Client) {
+// UnregisterClientFromCluster 从集群Hub注销客户端
+func UnregisterClientFromCluster(client *Client) {
 	if clusterHub != nil {
 		clusterHub.Unregister <- client
 	}
