@@ -22,6 +22,7 @@ type User struct {
 	Region      string         `gorm:"size:200" json:"region"`
 	Sign        string         `gorm:"size:500" json:"sign"`
 	Status      int            `gorm:"default:0" json:"status"`
+	Role        int            `gorm:"default:0" json:"role"` // 0:普通用户 1:管理员 2:超级管理员
 	Balance     float64        `gorm:"default:0" json:"balance"`
 	Points      int64          `gorm:"default:0" json:"points"`
 	VIPLevel    int            `gorm:"default:0" json:"vip_level"`

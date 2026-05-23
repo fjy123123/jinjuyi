@@ -208,11 +208,13 @@ func InitMongoDB() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	uri := fmt.Sprintf("mongodb://%s:%d", Cfg.MongoDB.Host, Cfg.MongoDB.Port)
+	var uri string
 	if Cfg.MongoDB.User != "" && Cfg.MongoDB.Password != "" {
-		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s",
+		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s?authSource=admin",
 			Cfg.MongoDB.User, Cfg.MongoDB.Password,
 			Cfg.MongoDB.Host, Cfg.MongoDB.Port, Cfg.MongoDB.DBName)
+	} else {
+		uri = fmt.Sprintf("mongodb://%s:%d", Cfg.MongoDB.Host, Cfg.MongoDB.Port)
 	}
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))

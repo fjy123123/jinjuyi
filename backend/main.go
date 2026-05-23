@@ -140,11 +140,10 @@ func main() {
 	// 管理员接口
 	admin := api.Group("/admin")
 	admin.Use(middleware.AuthMiddleware())
+	admin.Use(middleware.AdminMiddleware())
 	{
 		admin.GET("/db/stats", handlers.GetDatabaseStats)
 		admin.POST("/db/clear-old-messages", handlers.ClearOldMessages)
-		admin.POST("/db/clear-all", handlers.ClearAllData)
-		admin.POST("/db/init", handlers.InitializeDatabase)
 		admin.POST("/db/archive-old", handlers.ArchiveOldMessages)
 		admin.DELETE("/db/users/:user_id", handlers.DeleteUserAndData)
 		admin.DELETE("/db/groups/:group_id", handlers.DeleteGroupAndData)
@@ -159,14 +158,23 @@ func main() {
 		admin.POST("/system/maintenance", handlers.SetMaintenanceMode)
 
 		// 充值审核
-		admin.GET("/admin/recharge", handlers.GetAllRechargeRequests)
-		admin.PUT("/admin/recharge/:id/approve", handlers.ApproveRecharge)
-		admin.PUT("/admin/recharge/:id/reject", handlers.RejectRecharge)
+		admin.GET("/recharge", handlers.GetAllRechargeRequests)
+		admin.PUT("/recharge/:id/approve", handlers.ApproveRecharge)
+		admin.PUT("/recharge/:id/reject", handlers.RejectRecharge)
 
 		// 提现审核
-		admin.GET("/admin/withdraw", handlers.GetAllWithdrawRequests)
-		admin.PUT("/admin/withdraw/:id/approve", handlers.ApproveWithdraw)
-		admin.PUT("/admin/withdraw/:id/reject", handlers.RejectWithdraw)
+		admin.GET("/withdraw", handlers.GetAllWithdrawRequests)
+		admin.PUT("/withdraw/:id/approve", handlers.ApproveWithdraw)
+		admin.PUT("/withdraw/:id/reject", handlers.RejectWithdraw)
+	}
+
+	// 超级管理员接口 (危险操作)
+	superAdmin := api.Group("/admin/super")
+	superAdmin.Use(middleware.AuthMiddleware())
+	superAdmin.Use(middleware.SuperAdminMiddleware())
+	{
+		superAdmin.POST("/db/clear-all", handlers.ClearAllData)
+		superAdmin.POST("/db/init", handlers.InitializeDatabase)
 	}
 
 	log.Printf("Server starting on port %d", config.Cfg.Server.Port)
