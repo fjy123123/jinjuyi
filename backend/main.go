@@ -32,6 +32,13 @@ func main() {
 	// 安全中间件
 	r.Use(middleware.SecurityHeadersMiddleware())
 
+	// CORS中间件
+	r.Use(middleware.CORSMiddleware())
+
+	// 审计日志中间件
+	auditLogger := middleware.NewAuditLogger()
+	r.Use(auditLogger.Middleware())
+
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -39,9 +46,14 @@ func main() {
 
 	api := r.Group("/api/v1")
 
+	// 全局限流
+	api.Use(middleware.APIRateLimiter())
+
 	// 认证接口（无需登录）
 	auth := api.Group("/auth")
 	{
+		// 添加登录和注册限流
+		auth.Use(middleware.LoginRateLimiter())
 		auth.POST("/register", handlers.Register)
 		auth.POST("/login", handlers.Login)
 	}
