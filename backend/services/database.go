@@ -70,7 +70,7 @@ func (s *DatabaseService) InitializeDatabase() error {
 
 	// 3. 插入默认系统配置
 	defaultConfigs := []models.SystemConfig{
-		{Key: "site_name", Value: "Chat Pro", Description: "站点名称"},
+		{Key: "site_name", Value: "知信", Description: "站点名称"},
 		{Key: "ui.default_theme", Value: "modern", Description: "默认UI主题"},
 		{Key: "security.invite_code_enabled", Value: "false", Description: "是否启用邀请码"},
 		{Key: "security.captcha_enabled", Value: "false", Description: "是否启用验证码"},
@@ -84,17 +84,50 @@ func (s *DatabaseService) InitializeDatabase() error {
 		config.DB.Create(&cfg)
 	}
 
-	// 4. 创建一个演示账号
-	hashedPass, _ := utils.HashPassword("123456")
-	demoUser := models.User{
+	// 4. 创建超级管理员账号
+	hashedPass, _ := utils.HashPassword("admin123")
+	adminUser := models.User{
 		Username: "admin",
 		Password: hashedPass,
-		Nickname: "系统管理员",
-		Phone: "",
-		Email: "admin@example.com",
+		Nickname: "超级管理员",
+		Phone:    "",
+		Email:    "admin@zhixin.com",
+		Role:     2, // 超级管理员
+	}
+	config.DB.Create(&adminUser)
+
+	// 5. 创建演示用户
+	demoHashedPass, _ := utils.HashPassword("123456")
+	demoUser := models.User{
+		Username: "demo",
+		Password: demoHashedPass,
+		Nickname: "演示用户",
+		Phone:    "",
+		Email:    "demo@zhixin.com",
+		Role:     0, // 普通用户
 	}
 	config.DB.Create(&demoUser)
 
+	return nil
+}
+
+// EnsureAdminUser 确保至少存在一个管理员账号
+func (s *DatabaseService) EnsureAdminUser() error {
+	var count int64
+	config.DB.Model(&models.User{}).Where("role >= ?", 1).Count(&count)
+	
+	if count == 0 {
+		// 创建默认管理员
+		hashedPass, _ := utils.HashPassword("admin123")
+		adminUser := models.User{
+			Username: "admin",
+			Password: hashedPass,
+			Nickname: "超级管理员",
+			Role:     2,
+		}
+		return config.DB.Create(&adminUser).Error
+	}
+	
 	return nil
 }
 

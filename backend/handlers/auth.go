@@ -23,13 +23,11 @@ func Register(c *gin.Context) {
 		utils.ErrorResponse(c, 400, "参数错误: "+err.Error())
 		return
 	}
-	// 检查用户名是否已存在
 	var existing models.User
 	if config.DB.Where("username = ?", req.Username).First(&existing).Error == nil {
 		utils.ErrorResponse(c, 400, "用户名已存在")
 		return
 	}
-	// 加密密码
 	hashedPass, err := utils.HashPassword(req.Password)
 	if err != nil {
 		utils.ErrorResponse(c, 500, "系统错误")
@@ -50,8 +48,12 @@ func Register(c *gin.Context) {
 		utils.ErrorResponse(c, 500, "创建用户失败")
 		return
 	}
-	token, _ := generateToken(user.ID)
-	utils.SuccessResponse(c, gin.H{"token": token, "user": user})
+	token, refreshToken, _ := generateTokens(user.ID)
+	utils.SuccessResponse(c, gin.H{
+		"token":         token,
+		"refresh_token": refreshToken,
+		"user":          user,
+	})
 }
 
 // Login 用户登录
@@ -78,8 +80,63 @@ func Login(c *gin.Context) {
 		"last_login_at": now,
 		"last_login_ip": c.ClientIP(),
 	})
-	token, _ := generateToken(user.ID)
-	utils.SuccessResponse(c, gin.H{"token": token, "user": user})
+	token, refreshToken, _ := generateTokens(user.ID)
+	utils.SuccessResponse(c, gin.H{
+		"token":         token,
+		"refresh_token": refreshToken,
+		"user":          user,
+	})
+}
+
+// RefreshToken 刷新 JWT Token
+func RefreshToken(c *gin.Context) {
+	var req struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, 400, "参数错误")
+		return
+	}
+	
+	token, err := jwt.Parse(req.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.Cfg.JWT.Secret), nil
+	})
+	
+	if err != nil || !token.Valid {
+		utils.ErrorResponse(c, 401, "无效的刷新令牌")
+		return
+	}
+	
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		utils.ErrorResponse(c, 401, "无效的令牌声明")
+		return
+	}
+	
+	userID := uint(claims["user_id"].(float64))
+	tokenType, _ := claims["type"].(string)
+	if tokenType != "refresh" {
+		utils.ErrorResponse(c, 401, "错误的令牌类型")
+		return
+	}
+	
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		utils.ErrorResponse(c, 404, "用户不存在")
+		return
+	}
+	
+	newToken, newRefreshToken, _ := generateTokens(userID)
+	utils.SuccessResponse(c, gin.H{
+		"token":         newToken,
+		"refresh_token": newRefreshToken,
+	})
+}
+
+// Logout 用户登出
+func Logout(c *gin.Context) {
+	// 这里可以实现 token 黑名单机制
+	utils.SuccessResponse(c, nil)
 }
 
 // GetProfile 获取当前用户信息
@@ -126,7 +183,6 @@ func GetUserSettings(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	var settings models.UserSettings
 	if err := config.DB.Where("user_id = ?", userID).First(&settings).Error; err != nil {
-		// 创建默认设置
 		settings = models.UserSettings{UserID: userID}
 		config.DB.Create(&settings)
 	}
@@ -167,12 +223,27 @@ func SearchUsers(c *gin.Context) {
 	utils.SuccessResponse(c, users)
 }
 
-func generateToken(userID uint) (string, error) {
-	claims := jwt.MapClaims{
+func generateTokens(userID uint) (string, string, error) {
+	accessTokenClaims := jwt.MapClaims{
 		"user_id": userID,
+		"type":    "access",
 		"exp":     time.Now().Add(time.Duration(config.Cfg.JWT.ExpireHours) * time.Hour).Unix(),
 		"iat":     time.Now().Unix(),
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(config.Cfg.JWT.Secret))
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
+	accessTokenStr, err := accessToken.SignedString([]byte(config.Cfg.JWT.Secret))
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshTokenClaims := jwt.MapClaims{
+		"user_id": userID,
+		"type":    "refresh",
+		"exp":     time.Now().Add(30 * 24 * time.Hour).Unix(),
+		"iat":     time.Now().Unix(),
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
+	refreshTokenStr, err := refreshToken.SignedString([]byte(config.Cfg.JWT.Secret))
+	
+	return accessTokenStr, refreshTokenStr, err
 }

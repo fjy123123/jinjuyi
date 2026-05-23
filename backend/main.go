@@ -8,87 +8,73 @@ import (
 	"chat-system-pro/handlers"
 	"chat-system-pro/middleware"
 	"chat-system-pro/models"
+	"chat-system-pro/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// 初始化配置
 	config.InitConfig()
-
-	// 设置Gin模式
 	gin.SetMode(config.Cfg.Server.Mode)
 
-	// 初始化数据库
 	config.InitDatabase()
 	config.InitMongoDB()
 	config.InitRedis()
 
-	// 自动迁移
 	models.AutoMigrate(config.DB)
+
+	dbService := services.NewDatabaseService()
+	dbService.EnsureAdminUser()
 
 	r := gin.Default()
 
-	// 安全中间件
 	r.Use(middleware.SecurityHeadersMiddleware())
-
-	// CORS中间件
 	r.Use(middleware.CORSMiddleware())
 
-	// 审计日志中间件
 	auditLogger := middleware.NewAuditLogger()
 	r.Use(auditLogger.Middleware())
 
-	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
 	api := r.Group("/api/v1")
-
-	// 全局限流
 	api.Use(middleware.APIRateLimiter())
 
-	// 认证接口（无需登录）
 	auth := api.Group("/auth")
 	{
-		// 添加登录和注册限流
 		auth.Use(middleware.LoginRateLimiter())
 		auth.POST("/register", handlers.Register)
 		auth.POST("/login", handlers.Login)
+		auth.POST("/refresh", handlers.RefreshToken)
+		auth.POST("/logout", handlers.Logout)
 	}
 
-	// 需要登录的接口
 	authed := api.Group("")
 	authed.Use(middleware.AuthMiddleware())
 	{
-		// WebSocket
 		authed.GET("/ws", handlers.WebSocketHandler)
 
-		// 用户
 		authed.GET("/users/me", handlers.GetProfile)
 		authed.PUT("/users/profile", handlers.UpdateProfile)
 		authed.GET("/users/settings", handlers.GetUserSettings)
 		authed.PUT("/users/settings", handlers.UpdateUserSettings)
 		authed.GET("/users/search", handlers.SearchUsers)
 
-		// 好友
 		authed.GET("/friends", handlers.GetFriends)
 		authed.POST("/friends", handlers.AddFriend)
 		authed.DELETE("/friends/:friend_id", handlers.DeleteFriend)
 
-		// 会话
 		authed.GET("/conversations", handlers.GetConversations)
 		authed.GET("/conversations/unread", handlers.GetUnreadCount)
 
-		// 消息
 		authed.POST("/messages", handlers.SendMessage)
 		authed.GET("/messages/private/:friend_id", handlers.GetPrivateMessages)
 		authed.GET("/messages/group/:group_id", handlers.GetGroupMessages)
 		authed.POST("/messages/read", handlers.MarkAsRead)
 		authed.POST("/messages/:message_id/recall", handlers.RecallMessage)
+		authed.GET("/messages/export", handlers.ExportChatHistory)
 
-		// 群组
 		authed.POST("/groups", handlers.CreateGroup)
 		authed.GET("/groups", handlers.GetMyGroups)
 		authed.GET("/groups/:group_id", handlers.GetGroupInfo)
@@ -99,14 +85,12 @@ func main() {
 		authed.POST("/groups/:group_id/members/:member_id/mute", handlers.MuteGroupMember)
 		authed.POST("/groups/:group_id/leave", handlers.LeaveGroup)
 
-		// 红包
 		authed.POST("/redpackets", handlers.SendRedPacket)
 		authed.POST("/redpackets/:id/grab", handlers.GrabRedPacket)
 		authed.GET("/redpackets/:id", handlers.GetRedPacket)
 		authed.GET("/redpackets/sent", handlers.GetSentRedPackets)
 		authed.GET("/redpackets/received", handlers.GetReceivedRedPackets)
 
-		// 朋友圈
 		authed.POST("/moments", handlers.PublishMoment)
 		authed.GET("/moments", handlers.GetMoments)
 		authed.POST("/moments/:moment_id/like", handlers.LikeMoment)
@@ -114,30 +98,28 @@ func main() {
 		authed.POST("/moments/:moment_id/comments", handlers.CommentMoment)
 		authed.DELETE("/moments/:moment_id", handlers.DeleteMoment)
 
-		// 支付
 		authed.POST("/payment/orders", handlers.CreateOrder)
 		authed.POST("/payment/orders/:order_id/pay", handlers.ProcessPayment)
 		authed.GET("/payment/orders", handlers.GetOrders)
 		authed.GET("/payment/points/history", handlers.GetPointsHistory)
 
-		// 充值申请
 		authed.POST("/recharge", handlers.CreateRechargeRequest)
 		authed.GET("/recharge", handlers.GetMyRechargeRequests)
 		authed.GET("/recharge/:id", handlers.GetRechargeRequestDetail)
 
-		// 提现申请
 		authed.POST("/withdraw", handlers.CreateWithdrawRequest)
 		authed.GET("/withdraw", handlers.GetMyWithdrawRequests)
 		authed.GET("/withdraw/:id", handlers.GetWithdrawRequestDetail)
+
+		authed.GET("/emoji/categories", handlers.GetEmojiCategories)
+		authed.GET("/emoji/categories/:category_id", handlers.GetEmojisByCategory)
 	}
 
-	// 系统配置接口（公开接口）
 	system := api.Group("/system")
 	{
 		system.GET("/config", handlers.GetSystemConfig)
 	}
 
-	// 管理员接口
 	admin := api.Group("/admin")
 	admin.Use(middleware.AuthMiddleware())
 	admin.Use(middleware.AdminMiddleware())
@@ -151,24 +133,25 @@ func main() {
 		admin.GET("/system/configs", handlers.GetSystemConfigs)
 		admin.PUT("/system/configs", handlers.UpdateSystemConfig)
 
-		// 系统配置管理
 		admin.PUT("/system/config", handlers.UpdateSystemConfig)
 		admin.POST("/system/logo", handlers.UploadLogo)
 		admin.POST("/system/favicon", handlers.UploadFavicon)
 		admin.POST("/system/maintenance", handlers.SetMaintenanceMode)
 
-		// 充值审核
 		admin.GET("/recharge", handlers.GetAllRechargeRequests)
 		admin.PUT("/recharge/:id/approve", handlers.ApproveRecharge)
 		admin.PUT("/recharge/:id/reject", handlers.RejectRecharge)
 
-		// 提现审核
 		admin.GET("/withdraw", handlers.GetAllWithdrawRequests)
 		admin.PUT("/withdraw/:id/approve", handlers.ApproveWithdraw)
 		admin.PUT("/withdraw/:id/reject", handlers.RejectWithdraw)
+
+		admin.POST("/emoji/categories", handlers.AddEmojiCategory)
+		admin.DELETE("/emoji/categories/:id", handlers.DeleteEmojiCategory)
+		admin.POST("/emoji/items", handlers.AddEmojiItem)
+		admin.DELETE("/emoji/items/:id", handlers.DeleteEmojiItem)
 	}
 
-	// 超级管理员接口 (危险操作)
 	superAdmin := api.Group("/admin/super")
 	superAdmin.Use(middleware.AuthMiddleware())
 	superAdmin.Use(middleware.SuperAdminMiddleware())

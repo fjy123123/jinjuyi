@@ -3,10 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider, useSelector } from 'react-redux';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
+import enUS from 'antd/locale/en_US';
 import { store } from './store';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Chat from './pages/Chat';
+import AdminDashboard from './pages/AdminDashboard';
+import { I18nProvider, useI18n } from './locales';
 import { RootState } from './store';
 import './index.css';
 
@@ -41,6 +44,11 @@ const AppRoutes: React.FC = () => {
             <Chat />
           </ProtectedRoute>
         } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/login" element={
           <PublicRoute>
             <Login />
@@ -56,12 +64,23 @@ const AppRoutes: React.FC = () => {
   );
 };
 
+const AppWithI18n: React.FC = () => {
+  const { locale } = useI18n();
+  const antdLocale = locale === 'zh-CN' ? zhCN : enUS;
+  
+  return (
+    <ConfigProvider locale={antdLocale}>
+      <AppRoutes />
+    </ConfigProvider>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <ConfigProvider locale={zhCN}>
-        <AppRoutes />
-      </ConfigProvider>
+      <I18nProvider>
+        <AppWithI18n />
+      </I18nProvider>
     </Provider>
   );
 };
