@@ -13,10 +13,6 @@ import {
   message as antdMessage,
   Modal,
   Select,
-  Card,
-  Tabs,
-  Form,
-  InputNumber,
   Switch
 } from 'antd';
 import { 
@@ -31,11 +27,12 @@ import {
   GiftOutlined,
   HistoryOutlined,
   ThunderboltOutlined,
-  GlobalOutlined
+  MoreOutlined,
+  PictureOutlined
 } from '@ant-design/icons';
-import { RootState, setCurrentConversation, setConversations, addMessage } from '../store';
-import { api } from '../services/api';
-import { useWebSocket } from '../hooks/useWebSocket';
+import { RootState, setCurrentConversation, setConversations, addMessage } from '@/store';
+import { api } from '@/services/api';
+import { useWebSocket } from '@/hooks/useWebSocket';
 import './Chat.css';
 
 const { Sider, Content } = Layout;
@@ -70,24 +67,6 @@ const THEMES: Record<string, ThemeConfig> = {
     messageBg: '#2a2a2a',
     myMessageBg: '#07c160',
     borderColor: '#333'
-  },
-  ocean: {
-    name: 'Ocean',
-    primaryColor: '#13c2c2',
-    bgColor: '#f0f9ff',
-    sidebarBg: '#ffffff',
-    messageBg: '#e6f7ff',
-    myMessageBg: '#13c2c2',
-    borderColor: '#91d5ff'
-  },
-  purple: {
-    name: 'Purple',
-    primaryColor: '#722ed1',
-    bgColor: '#f9f0ff',
-    sidebarBg: '#ffffff',
-    messageBg: '#f9f0ff',
-    myMessageBg: '#722ed1',
-    borderColor: '#d3adf7'
   }
 };
 
@@ -97,16 +76,13 @@ const Chat: React.FC = () => {
   const { conversations, currentConversation, messages } = useSelector((state: RootState) => state.chat);
   const [currentTheme, setCurrentTheme] = useState('modern');
   const [inputValue, setInputValue] = useState('');
-  const [showUserSearch, setShowUserSearch] = useState(false);
-  const [showGroupCreate, setShowGroupCreate] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const theme = THEMES[currentTheme];
   
   // WebSocket hook
-  const { sendMessage, isConnected } = useWebSocket();
+  const { isConnected } = useWebSocket();
 
   useEffect(() => {
     loadConversations();
@@ -149,7 +125,11 @@ const Chat: React.FC = () => {
       }
       
       if (res.code === 0) {
-        dispatch(setMessages({ key, messages: res.data }));
+        dispatch(addMessage({
+          type: currentConversation.type,
+          targetId: currentConversation.target_id,
+          message: res.data
+        }));
       }
     } catch (error) {
       console.error(error);
@@ -163,7 +143,6 @@ const Chat: React.FC = () => {
     setInputValue('');
     
     try {
-      // 通过 API 发送
       const res = await api.message.send({
         receiver_id: currentConversation.type === 1 ? currentConversation.target_id : undefined,
         group_id: currentConversation.type === 2 ? currentConversation.target_id : undefined,
@@ -266,8 +245,8 @@ const Chat: React.FC = () => {
             </div>
           </div>
           <div className="header-actions">
-            <Button type="text" icon={<PlusOutlined />} onClick={() => setShowUserSearch(true)} />
-            <Button type="text" icon={<TeamOutlined />} onClick={() => setShowGroupCreate(true)} />
+            <Button type="text" icon={<PlusOutlined />} />
+            <Button type="text" icon={<TeamOutlined />} />
           </div>
         </div>
 
@@ -418,18 +397,6 @@ const Chat: React.FC = () => {
           
           <div className="setting-item">
             <label>验证码登录</label>
-            <Switch checked={false} />
-          </div>
-          
-          <div className="setting-section-title">支付设置</div>
-          
-          <div className="setting-item">
-            <label>微信支付</label>
-            <Switch checked={false} />
-          </div>
-          
-          <div className="setting-item">
-            <label>支付宝</label>
             <Switch checked={false} />
           </div>
         </div>
