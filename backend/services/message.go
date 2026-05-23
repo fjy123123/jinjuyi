@@ -210,51 +210,87 @@ func (s *MessageService) MarkAsRead(userID, targetID uint, convType int) error {
 	ctx := context.TODO()
 	
 	now := time.Now()
+	var updatedIDs []string
 	
 	if convType == 1 {
-		// 私聊
+		// 私聊 - 先查找需要更新的消息
 		filter := bson.M{
-			"sender_id": targetID,
+			"sender_id":   targetID,
 			"receiver_id": userID,
-			"is_read": false,
+			"is_read":     false,
 		}
 		
-		update := bson.M{
-			"$set": bson.M{
-				"is_read": true,
-				"read_at": now,
-				"updated_at": now,
-			},
-			"$addToSet": bson.M{"read_users": userID},
+		// 查找要更新的消息ID
+		cursor, _ := config.MongoDBCollection.Collection("messages").Find(ctx, filter)
+		var msgsToUpdate []models.MessageDoc
+		cursor.All(ctx, &msgsToUpdate)
+		
+		for _, msg := range msgsToUpdate {
+			updatedIDs = append(updatedIDs, msg.ID)
 		}
 		
-		_, err := config.MongoDBCollection.Collection("messages").UpdateMany(ctx, filter, update)
-		if err != nil {
-			return err
+		if len(updatedIDs) > 0 {
+			// 执行更新
+			update := bson.M{
+				"$set": bson.M{
+					"is_read":    true,
+					"read_at":    now,
+					"updated_at": now,
+				},
+				"$addToSet": bson.M{"read_users": userID},
+			}
+			
+			_, err := config.MongoDBCollection.Collection("messages").UpdateMany(ctx, filter, update)
+			if err != nil {
+				return err
+			}
+			
+			// 广播已读回执
+			go utils.BroadcastReadReceipt(userID, targetID, convType, updatedIDs)
 		}
 		
 		// 清零会话未读数
 		config.DB.Model(&models.Conversation{}).
 			Where("user_id = ? AND type = 1 AND target_id = ?", userID, targetID).
 			Update("unread_count", 0)
+		
 	} else if convType == 2 {
 		// 群聊
-		// 更新群消息的已读列表
-		pipeline := []bson.M{
-			{"$match": bson.M{
-				"group_id": targetID,
-				"read_users": bson.M{"$ne": userID},
-			}},
-			{"$set": bson.M{
-				"read_users": bson.M{"$concatArrays": []interface{}{"$read_users", []uint{userID}}},
-				"updated_at": now,
-			}},
-			{"$merge": bson.M{"into": "messages"}},
+		filter := bson.M{
+			"group_id":   targetID,
+			"read_users": bson.M{"$ne": userID},
 		}
 		
-		_, err := config.MongoDBCollection.Collection("messages").Aggregate(ctx, pipeline)
-		if err != nil {
-			return err
+		// 查找要更新的消息ID
+		cursor, _ := config.MongoDBCollection.Collection("messages").Find(ctx, filter)
+		var msgsToUpdate []models.MessageDoc
+		cursor.All(ctx, &msgsToUpdate)
+		
+		for _, msg := range msgsToUpdate {
+			updatedIDs = append(updatedIDs, msg.ID)
+		}
+		
+		if len(updatedIDs) > 0 {
+			// 更新群消息的已读列表
+			oidList := make([]primitive.ObjectID, len(updatedIDs))
+			for i, id := range updatedIDs {
+				oid, _ := primitive.ObjectIDFromHex(id)
+				oidList[i] = oid
+			}
+			
+			updateFilter := bson.M{"_id": bson.M{"$in": oidList}}
+			update := bson.M{
+				"$addToSet": bson.M{"read_users": userID},
+				"$set":      bson.M{"updated_at": now},
+			}
+			
+			_, err := config.MongoDBCollection.Collection("messages").UpdateMany(ctx, updateFilter, update)
+			if err != nil {
+				return err
+			}
+			
+			// 广播已读回执
+			go utils.BroadcastReadReceipt(userID, targetID, convType, updatedIDs)
 		}
 		
 		config.DB.Model(&models.Conversation{}).

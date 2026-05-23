@@ -91,12 +91,26 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (currentConversation) {
       loadMessages();
+      // 标记当前对话的消息为已读
+      markAsRead();
     }
   }, [currentConversation]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const markAsRead = async () => {
+    if (!currentConversation) return;
+    try {
+      await api.message.markAsRead({
+        target_id: currentConversation.target_id,
+        type: currentConversation.type
+      });
+    } catch (error) {
+      console.error('标记已读失败', error);
+    }
+  };
 
   const loadConversations = async () => {
     try {
@@ -200,6 +214,27 @@ const Chat: React.FC = () => {
   const renderMessage = (msg: any) => {
     const isMyMessage = msg.sender_id === user?.id;
     
+    // 已读状态显示
+    const renderReadStatus = () => {
+      if (!isMyMessage) return null;
+      
+      // 群聊显示已读人数
+      if (currentConversation?.type === 2 && msg.read_users) {
+        const readCount = msg.read_users.length - 1; // 减去自己
+        if (readCount > 0) {
+          return <span className="read-status read-multiple">{readCount}人已读</span>;
+        }
+      } 
+      // 私聊显示已读/未读
+      else if (currentConversation?.type === 1) {
+        if (msg.is_read) {
+          return <span className="read-status read">已读</span>;
+        }
+      }
+      
+      return <span className="read-status">未读</span>;
+    };
+    
     return (
       <div 
         key={msg.id} 
@@ -214,8 +249,11 @@ const Chat: React.FC = () => {
           ) : (
             <div className="message-content">{msg.content}</div>
           )}
-          <div className="message-time">
-            {new Date(msg.created_at).toLocaleTimeString()}
+          <div className="message-meta">
+            <span className="message-time">
+              {new Date(msg.created_at).toLocaleTimeString()}
+            </span>
+            {renderReadStatus()}
           </div>
         </div>
       </div>

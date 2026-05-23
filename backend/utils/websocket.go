@@ -106,6 +106,28 @@ func BroadcastRecallMessage(messageID string) {
 	hub.Broadcast <- bytes
 }
 
+// BroadcastReadReceipt 广播消息已读回执
+func BroadcastReadReceipt(userID uint, targetID uint, convType int, messageIDs []string) {
+	wsMsg := WSMessage{
+		Type: "read_receipt",
+		Data: map[string]interface{}{
+			"user_id":      userID,
+			"target_id":    targetID,
+			"type":         convType,
+			"message_ids":  messageIDs,
+		},
+	}
+	bytes, _ := json.Marshal(wsMsg)
+	
+	if convType == 1 {
+		// 私聊，发送给对方
+		broadcastToUser(targetID, bytes)
+	} else {
+		// 群聊，发送给群成员
+		broadcastToGroup(targetID, userID, bytes)
+	}
+}
+
 // WSMessage WebSocket 消息格式
 type WSMessage struct {
 	Type string      `json:"type"`

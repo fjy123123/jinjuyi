@@ -9,12 +9,16 @@ interface User {
 }
 
 interface Message {
-  id: number
+  id: string
   sender_id: number
+  receiver_id?: number
+  group_id?: number
   content: string
   message_type: number
   created_at: string
   is_recall?: boolean
+  is_read?: boolean
+  read_users?: number[]
   sender?: User
 }
 
@@ -99,6 +103,36 @@ const chatSlice = createSlice({
     },
     setMessages: (state, action: PayloadAction<{ key: string; messages: Message[] }>) => {
       state.messages[action.payload.key] = action.payload.messages
+    },
+    updateMessageReadStatus: (
+      state, 
+      action: PayloadAction<{ 
+        convType: number; 
+        targetId: number; 
+        messageIds: string[];
+        readerId: number;
+      }>
+    ) => {
+      const { convType, targetId, messageIds, readerId } = action.payload
+      const key = convType === 1 
+        ? `private_${targetId}` 
+        : `group_${targetId}`
+      
+      if (state.messages[key]) {
+        state.messages[key] = state.messages[key].map(msg => {
+          if (messageIds.includes(msg.id)) {
+            if (convType === 1) {
+              // 私聊
+              return { ...msg, is_read: true }
+            } else {
+              // 群聊 - 更新 read_users
+              const newReadUsers = Array.from(new Set([...(msg.read_users || []), readerId]))
+              return { ...msg, read_users: newReadUsers }
+            }
+          }
+          return msg
+        })
+      }
     }
   },
   extraReducers: (builder) => {
@@ -122,5 +156,5 @@ const chatSlice = createSlice({
   }
 })
 
-export const { setCurrentConversation, addMessage, setConversations, setMessages } = chatSlice.actions
+export const { setCurrentConversation, addMessage, setConversations, setMessages, updateMessageReadStatus } = chatSlice.actions
 export default chatSlice.reducer

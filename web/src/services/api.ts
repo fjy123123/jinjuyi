@@ -83,7 +83,8 @@ export const api = {
   message: {
     getPrivate: (userId: number) => apiClient.get(`/api/v1/message/private/${userId}`),
     getGroup: (groupId: number) => apiClient.get(`/api/v1/message/group/${groupId}`),
-    send: (data: { receiver_id?: number; group_id?: number; content: string; message_type: number }) => apiClient.post('/api/v1/message/send', data)
+    send: (data: { receiver_id?: number; group_id?: number; content: string; message_type: number }) => apiClient.post('/api/v1/message/send', data),
+    markAsRead: (data: { target_id: number; type: number }) => apiClient.post('/api/v1/message/read', data)
   },
   friend: {
     getList: () => apiClient.get('/api/v1/friend/list'),
