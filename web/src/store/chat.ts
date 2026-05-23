@@ -133,6 +133,20 @@ const chatSlice = createSlice({
           return msg
         })
       }
+    },
+    // 清理过期消息
+    cleanOldMessages: (state, action: PayloadAction<Date>) => {
+      const cutoffTime = action.payload
+      
+      // 清理所有会话中的过期消息
+      for (const key in state.messages) {
+        state.messages[key] = state.messages[key].filter(msg => {
+          const msgTime = new Date(msg.created_at)
+          return msgTime >= cutoffTime
+        })
+      }
+      
+      console.log(`已清理 ${cutoffTime.toISOString()} 之前的本地消息`)
     }
   },
   extraReducers: (builder) => {
@@ -156,5 +170,13 @@ const chatSlice = createSlice({
   }
 })
 
-export const { setCurrentConversation, addMessage, setConversations, setMessages, updateMessageReadStatus } = chatSlice.actions
+export const { 
+  setCurrentConversation, 
+  addMessage, 
+  setConversations, 
+  setMessages, 
+  updateMessageReadStatus,
+  cleanOldMessages 
+} = chatSlice.actions
+
 export default chatSlice.reducer

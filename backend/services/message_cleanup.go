@@ -7,9 +7,9 @@ import (
 
 	"chat-system-pro/config"
 	"chat-system-pro/models"
+	"chat-system-pro/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // MessageCleanupService 消息清理服务
@@ -76,6 +76,39 @@ func (s *MessageCleanupService) CleanupOldMessages(days int) {
 		"is_recall":  false, // 不删除已撤回的消息（保留撤回记录）
 	}
 
+	// 获取要删除的消息ID列表（用于通知前端）
+	cursor, err := config.MongoDBCollection.Collection("messages").Find(ctx, filter)
+	if err != nil {
+		log.Println("查询待删除消息失败:", err)
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var messagesToDelete []models.MessageDoc
+	if err := cursor.All(ctx, &messagesToDelete); err != nil {
+		log.Println("解析待删除消息失败:", err)
+		return
+	}
+
+	if len(messagesToDelete) == 0 {
+		log.Println("没有需要清理的消息")
+		s.updateLastRunTime()
+		return
+	}
+
+	// 收集受影响的用户和群组
+	affectedUsers := make(map[uint]bool)
+	affectedGroups := make(map[uint]bool)
+	
+	for _, msg := range messagesToDelete {
+		if msg.Type == 1 { // 私聊
+			affectedUsers[msg.SenderID] = true
+			affectedUsers[msg.ReceiverID] = true
+		} else if msg.Type == 2 { // 群聊
+			affectedGroups[msg.GroupID] = true
+		}
+	}
+
 	// 执行删除
 	deleteResult, err := config.MongoDBCollection.Collection("messages").DeleteMany(ctx, filter)
 	if err != nil {
@@ -85,8 +118,31 @@ func (s *MessageCleanupService) CleanupOldMessages(days int) {
 
 	log.Printf("成功清理 %d 条过期消息", deleteResult.DeletedCount)
 
+	// 广播清理通知给所有在线用户
+	s.broadcastCleanupNotification(affectedUsers, affectedGroups, cutoffTime)
+
 	// 更新上次清理时间
 	s.updateLastRunTime()
+}
+
+// broadcastCleanupNotification 广播清理通知
+func (s *MessageCleanupService) broadcastCleanupNotification(
+	affectedUsers map[uint]bool, 
+	affectedGroups map[uint]bool, 
+	cutoffTime time.Time,
+) {
+	notification := map[string]interface{}{
+		"type":             "messages_cleaned",
+		"cutoff_time":       cutoffTime.Format(time.RFC3339),
+		"affected_users":    affectedUsers,
+		"affected_groups":   affectedGroups,
+	}
+
+	// 广播给所有在线用户
+	utils.BroadcastToAll("system_notification", notification)
+	
+	log.Printf("已广播消息清理通知，影响 %d 个用户，%d 个群组", 
+		len(affectedUsers), len(affectedGroups))
 }
 
 // updateLastRunTime 更新上次清理时间
