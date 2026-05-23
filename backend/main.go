@@ -26,6 +26,10 @@ func main() {
 	dbService := services.NewDatabaseService()
 	dbService.EnsureAdminUser()
 
+	// 启动消息清理定时任务
+	services.MessageCleanup.StartCleanupScheduler()
+	log.Println("消息清理定时任务已启动")
+
 	r := gin.Default()
 
 	r.Use(middleware.SecurityHeadersMiddleware())

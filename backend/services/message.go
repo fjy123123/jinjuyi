@@ -160,7 +160,7 @@ func (s *MessageService) GetPrivateMessages(userID, friendID uint, page, pageSiz
 	}
 	
 	// 反转顺序
-	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j=1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
 	
@@ -198,7 +198,7 @@ func (s *MessageService) GetGroupMessages(groupID uint, page, pageSize int, last
 	}
 	
 	// 反转顺序
-	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
+	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j=1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
 	
@@ -301,9 +301,20 @@ func (s *MessageService) MarkAsRead(userID, targetID uint, convType int) error {
 	return nil
 }
 
-// RecallMessage 撤回消息
+// RecallMessage 撤回消息（使用系统配置控制撤回时限）
 func (s *MessageService) RecallMessage(messageID string, userID uint) error {
 	ctx := context.TODO()
+	
+	// 获取系统配置
+	var sysConfig models.SystemConfig
+	if err := config.DB.First(&sysConfig).Error; err != nil {
+		return errors.New("系统配置错误")
+	}
+	
+	// 检查是否允许撤回
+	if !sysConfig.RecallEnabled {
+		return errors.New("消息撤回功能已关闭")
+	}
 	
 	oid, _ := primitive.ObjectIDFromHex(messageID)
 	filter := bson.M{
@@ -311,16 +322,18 @@ func (s *MessageService) RecallMessage(messageID string, userID uint) error {
 		"sender_id": userID,
 	}
 	
-	// 检查是否超过时间（2分钟）
+	// 查找消息
 	var msg models.MessageDoc
 	config.MongoDBCollection.Collection("messages").FindOne(ctx, filter).Decode(&msg)
 	
 	if msg.ID == "" {
-		return errors.New("message not found")
+		return errors.New("消息不存在")
 	}
 	
-	if time.Since(msg.CreatedAt) > 2*time.Minute {
-		return errors.New("can only recall messages within 2 minutes")
+	// 使用系统配置的撤回时限（秒）
+	recallTimeout := time.Duration(sysConfig.RecallTimeout) * time.Second
+	if time.Since(msg.CreatedAt) > recallTimeout {
+		return fmt.Errorf("只能在发送后 %d 秒内撤回消息", sysConfig.RecallTimeout)
 	}
 	
 	update := bson.M{

@@ -128,6 +128,16 @@ func BroadcastReadReceipt(userID uint, targetID uint, convType int, messageIDs [
 	}
 }
 
+// BroadcastToAll 广播消息给所有在线用户
+func BroadcastToAll(msgType string, data interface{}) {
+	wsMsg := WSMessage{
+		Type: msgType,
+		Data: data,
+	}
+	bytes, _ := json.Marshal(wsMsg)
+	hub.Broadcast <- bytes
+}
+
 // WSMessage WebSocket 消息格式
 type WSMessage struct {
 	Type string      `json:"type"`

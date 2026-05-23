@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Tag, Space, Switch, InputNumber } from 'antd';
+import { Layout, Menu, Card, Table, Button, Modal, Form, Input, message, Tag, Space, Switch, InputNumber, Divider, Alert } from 'antd';
 import { 
   DashboardOutlined, 
   UserOutlined, 
@@ -8,7 +8,9 @@ import {
   SmileOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  DeleteOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -26,6 +28,11 @@ interface SystemConfig {
   maintenance_msg: string;
   export_enabled: boolean;
   export_max_records: number;
+  auto_delete_enabled: boolean;
+  auto_delete_days: number;
+  auto_delete_last_run: string;
+  recall_enabled: boolean;
+  recall_timeout: number;
 }
 
 interface RechargeRequest {
@@ -69,10 +76,12 @@ const AdminDashboard: React.FC = () => {
   const [emojiCategories, setEmojiCategories] = useState<EmojiCategory[]>([]);
   const [emojis, setEmojis] = useState<EmojiItem[]>([]);
   const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
+  const [cleanupStatus, setCleanupStatus] = useState<any>(null);
   
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
   const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [cleanupModalVisible, setCleanupModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [emojiForm] = Form.useForm();
   const [configForm] = Form.useForm();
@@ -92,6 +101,8 @@ const AdminDashboard: React.FC = () => {
       loadEmojiCategories();
     } else if (selectedKey === 'settings') {
       loadSystemConfig();
+    } else if (selectedKey === 'cleanup') {
+      loadCleanupStatus();
     }
   }, [selectedKey, isAuthenticated, navigate]);
 
@@ -140,11 +151,25 @@ const AdminDashboard: React.FC = () => {
         maintenance_mode: response.data.data.maintenance_mode,
         maintenance_msg: response.data.data.maintenance_msg,
         export_enabled: response.data.data.export_enabled,
-        export_max_records: response.data.data.export_max_records
+        export_max_records: response.data.data.export_max_records,
+        auto_delete_enabled: response.data.data.auto_delete_enabled,
+        auto_delete_days: response.data.data.auto_delete_days,
+        recall_enabled: response.data.data.recall_enabled,
+        recall_timeout: response.data.data.recall_timeout
       });
       setConfigModalVisible(true);
     } catch (error) {
       message.error('加载系统配置失败');
+    }
+  };
+
+  const loadCleanupStatus = async () => {
+    try {
+      const response = await api.get('/admin/cleanup/status');
+      setCleanupStatus(response.data.data);
+      setCleanupModalVisible(true);
+    } catch (error) {
+      message.error('加载清理状态失败');
     }
   };
 
@@ -196,12 +221,26 @@ const AdminDashboard: React.FC = () => {
         ...values,
         maintenance_mode: values.maintenance_mode,
         export_enabled: values.export_enabled,
-        export_max_records: values.export_max_records
+        export_max_records: values.export_max_records,
+        auto_delete_enabled: values.auto_delete_enabled,
+        auto_delete_days: values.auto_delete_days,
+        recall_enabled: values.recall_enabled,
+        recall_timeout: values.recall_timeout
       });
       message.success('配置更新成功');
       setConfigModalVisible(false);
     } catch (error) {
       message.error('更新配置失败');
+    }
+  };
+
+  const handleForceCleanup = async () => {
+    try {
+      await api.post('/admin/cleanup/force');
+      message.success('清理任务已启动');
+      loadCleanupStatus();
+    } catch (error) {
+      message.error('启动清理失败');
     }
   };
 
@@ -342,6 +381,35 @@ const AdminDashboard: React.FC = () => {
             />
           </div>
         );
+
+      case 'cleanup':
+        return (
+          <div>
+            <h2>消息清理管理</h2>
+            {cleanupStatus && (
+              <div style={{ marginTop: 20 }}>
+                <Alert
+                  message="自动清理状态"
+                  description={
+                    <div>
+                      <p>自动清理: {cleanupStatus.auto_delete_enabled ? '已开启' : '已关闭'}</p>
+                      <p>清理天数: {cleanupStatus.auto_delete_days} 天</p>
+                      <p>上次清理: {cleanupStatus.last_run || '从未'}</p>
+                      <p>待清理消息: {cleanupStatus.pending_cleanup} 条</p>
+                    </div>
+                  }
+                  type={cleanupStatus.auto_delete_enabled ? 'info' : 'warning'}
+                  showIcon
+                />
+                <div style={{ marginTop: 16 }}>
+                  <Button type="primary" danger icon={<DeleteOutlined />} onClick={handleForceCleanup}>
+                    立即执行清理
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
       
       default:
         return <div>请选择功能模块</div>;
@@ -369,6 +437,7 @@ const AdminDashboard: React.FC = () => {
               { key: 'recharge', icon: <WalletOutlined />, label: '充值审核' },
               { key: 'withdraw', icon: <WalletOutlined />, label: '提现审核' },
               { key: 'emoji', icon: <SmileOutlined />, label: '表情包管理' },
+              { key: 'cleanup', icon: <DeleteOutlined />, label: '消息清理' },
               { key: 'settings', icon: <SettingOutlined />, label: '系统设置' }
             ]}
           />
@@ -401,7 +470,7 @@ const AdminDashboard: React.FC = () => {
         open={configModalVisible}
         onCancel={() => setConfigModalVisible(false)}
         footer={null}
-        width={600}
+        width={700}
       >
         <Form
           form={configForm}
@@ -425,26 +494,76 @@ const AdminDashboard: React.FC = () => {
             <TextArea rows={3} />
           </Form.Item>
 
-          <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, marginTop: 16 }}>
-            <h4>聊天记录导出设置</h4>
-            
-            <Form.Item 
-              label="允许导出聊天记录" 
-              name="export_enabled"
-              valuePropName="checked"
-              tooltip="关闭后用户将无法导出聊天记录"
-            >
-              <Switch />
-            </Form.Item>
+          <Divider />
 
-            <Form.Item 
-              label="最大导出记录数" 
-              name="export_max_records"
-              tooltip="单次导出的最大消息记录数量"
-            >
-              <InputNumber min={100} max={10000} step={100} />
-            </Form.Item>
-          </div>
+          <h4>聊天记录导出设置</h4>
+          
+          <Form.Item 
+            label="允许导出聊天记录" 
+            name="export_enabled"
+            valuePropName="checked"
+            tooltip="关闭后用户将无法导出聊天记录"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item 
+            label="最大导出记录数" 
+            name="export_max_records"
+            tooltip="单次导出的最大消息记录数量"
+          >
+            <InputNumber min={100} max={10000} step={100} />
+          </Form.Item>
+
+          <Divider />
+
+          <h4>消息自动清理设置</h4>
+          
+          <Form.Item 
+            label="开启消息自动清理" 
+            name="auto_delete_enabled"
+            valuePropName="checked"
+            tooltip="开启后系统将自动清理超过指定天数的旧消息"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item 
+            label="自动清理天数" 
+            name="auto_delete_days"
+            tooltip="消息保留天数，超过此天数的旧消息将被自动删除"
+          >
+            <InputNumber min={1} max={365} step={1} addonAfter="天" />
+          </Form.Item>
+
+          <Alert
+            message="⚠️ 警告"
+            description="开启自动清理后，超过指定天数的旧消息将被永久删除，且会通知所有在线用户清理本地消息。此操作不可恢复！"
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+
+          <Divider />
+
+          <h4>消息撤回设置</h4>
+          
+          <Form.Item 
+            label="允许消息撤回" 
+            name="recall_enabled"
+            valuePropName="checked"
+            tooltip="关闭后用户将无法撤回已发送的消息"
+          >
+            <Switch />
+          </Form.Item>
+
+          <Form.Item 
+            label="撤回时限" 
+            name="recall_timeout"
+            tooltip="发送消息后多长时间内可以撤回"
+          >
+            <InputNumber min={10} max={3600} step={10} addonAfter="秒" />
+          </Form.Item>
 
           <Form.Item>
             <Space>
