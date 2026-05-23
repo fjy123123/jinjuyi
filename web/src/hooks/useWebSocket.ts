@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { addMessage, updateMessageReadStatus, cleanOldMessages } from '@/store/chat'
-import { message } from 'antd'
 import { RootState } from '@/store'
 
 interface WebSocketHook {
@@ -63,13 +62,12 @@ export const useWebSocket = (): WebSocketHook => {
 
           // 处理系统通知（包括消息清理）
           if (data.type === 'system_notification') {
-            const { type: notifType, cutoff_time, affected_users, affected_groups } = data.data
+            const { type: notifType, cutoff_time } = data.data
             
             if (notifType === 'messages_cleaned') {
-              // 消息被清理，清理本地过期消息
+              // 消息被清理，清理本地过期消息（静默清理，不提示用户）
               const cutoffDate = new Date(cutoff_time)
               dispatch(cleanOldMessages(cutoffDate))
-              message.info(`系统已清理 ${cutoff_time.split('T')[0]} 之前的旧消息`)
             }
           }
         } catch (error) {
